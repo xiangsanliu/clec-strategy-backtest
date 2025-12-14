@@ -1,0 +1,5 @@
+{
+  "name": "QQQ/QLD Backtester",
+  "description": "A high-performance, client-side investment backtesting engine simulating QQQ (Nasdaq-100) and QLD (2x Leveraged) strategies with cash management and rebalancing logic.",
+  "requestFramePermissions": []
+}

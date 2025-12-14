@@ -1,0 +1,472 @@
+import React, { useState } from 'react';
+import { AssetConfig, Profile, StrategyType } from '../types';
+import { Settings, DollarSign, PieChart, TrendingUp, Plus, Trash2, Edit2, ArrowLeft, Check, Coins, Percent, Landmark } from 'lucide-react';
+import { useTranslation } from '../services/i18n';
+
+interface ConfigPanelProps {
+  profiles: Profile[];
+  onProfilesChange: (profiles: Profile[]) => void;
+  onRun: () => void;
+}
+
+// High-contrast palette for distinct chart lines
+const PROFILE_COLORS = [
+  '#2563eb', // Blue
+  '#ea580c', // Orange
+  '#16a34a', // Green
+  '#9333ea', // Purple
+  '#dc2626', // Red
+  '#0891b2', // Cyan
+  '#db2777', // Pink
+  '#ca8a04', // Dark Yellow/Gold
+  '#475569', // Slate
+  '#4f46e5', // Indigo
+];
+
+const DEFAULT_ASSET_CONFIG: AssetConfig = {
+  initialCapital: 10000,
+  contributionAmount: 500,
+  contributionIntervalMonths: 1,
+  qqqWeight: 50,
+  qldWeight: 40,
+  contributionQqqWeight: 100, // Default to safer contribution
+  contributionQldWeight: 0,
+  cashYieldAnnual: 2.0,
+  leverage: {
+    enabled: false,
+    interestRate: 5.0,
+    maxLtv: 60.0,
+    withdrawType: 'PERCENT',
+    withdrawValue: 2.0
+  }
+};
+
+export const ConfigPanel: React.FC<ConfigPanelProps> = ({ profiles, onProfilesChange, onRun }) => {
+  const { t } = useTranslation();
+  const [editingProfileId, setEditingProfileId] = useState<string | null>(null);
+
+  const STRATEGY_OPTIONS: {value: StrategyType, label: string}[] = [
+    { value: 'LUMP_SUM', label: t('strat_lumpSum') },
+    { value: 'DCA', label: t('strat_dca') },
+    { value: 'REBALANCE', label: t('strat_rebalance') },
+    { value: 'SMART', label: t('strat_smart') }
+  ];
+
+  const getStrategyLabel = (type: StrategyType) => {
+    return STRATEGY_OPTIONS.find(o => o.value === type)?.label || type;
+  };
+
+  const handleAddProfile = () => {
+    const newId = Math.random().toString(36).substr(2, 9);
+    const nextColor = PROFILE_COLORS[profiles.length % PROFILE_COLORS.length];
+    
+    const newProfile: Profile = {
+      id: newId,
+      name: `${t('profiles')} ${profiles.length + 1}`,
+      color: nextColor,
+      strategyType: 'DCA',
+      config: JSON.parse(JSON.stringify(DEFAULT_ASSET_CONFIG)) // Deep copy
+    };
+    
+    onProfilesChange([...profiles, newProfile]);
+    setEditingProfileId(newId);
+  };
+
+  const handleDeleteProfile = (e: React.MouseEvent, id: string) => {
+    e.stopPropagation();
+    if (profiles.length <= 1) return; // Prevent deleting last profile
+    onProfilesChange(profiles.filter(p => p.id !== id));
+    if (editingProfileId === id) setEditingProfileId(null);
+  };
+
+  const updateProfile = (id: string, updates: Partial<Profile> | Partial<AssetConfig>) => {
+    onProfilesChange(profiles.map(p => {
+      if (p.id !== id) return p;
+      // Check if keys belong to config or profile root
+      const isConfigUpdate = Object.keys(updates).some(k => k in DEFAULT_ASSET_CONFIG);
+      if (isConfigUpdate) {
+        return { ...p, config: { ...p.config, ...updates } };
+      }
+      return { ...p, ...updates };
+    }));
+  };
+
+  const updateLeverage = (id: string, updates: Partial<AssetConfig['leverage']>) => {
+    onProfilesChange(profiles.map(p => {
+      if (p.id !== id) return p;
+      return {
+        ...p,
+        config: {
+          ...p.config,
+          leverage: { ...p.config.leverage, ...updates }
+        }
+      };
+    }));
+  };
+
+  // --------------------------------------------------------------------------
+  // Edit View
+  // --------------------------------------------------------------------------
+  if (editingProfileId) {
+    const profile = profiles.find(p => p.id === editingProfileId);
+    if (!profile) return null;
+    
+    const cashWeight = Math.max(0, 100 - profile.config.qqqWeight - profile.config.qldWeight);
+    const contribCashWeight = Math.max(0, 100 - profile.config.contributionQqqWeight - profile.config.contributionQldWeight);
+
+    return (
+       <div className="flex flex-col animate-in slide-in-from-right duration-300">
+         <div className="flex items-center gap-2 mb-4 text-slate-800">
+           <button onClick={() => setEditingProfileId(null)} className="p-1 hover:bg-slate-200 rounded-full transition-colors">
+              <ArrowLeft className="w-5 h-5 text-slate-600" />
+           </button>
+           <h2 className="text-lg font-bold">{t('editProfile')}</h2>
+         </div>
+
+         <div className="space-y-6">
+            
+            {/* Identity */}
+            <div className="space-y-2">
+               <label className="text-xs font-semibold text-slate-500 uppercase">{t('profileName')}</label>
+               <input 
+                  type="text" 
+                  value={profile.name} 
+                  onChange={(e) => updateProfile(profile.id, { name: e.target.value })}
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none font-medium"
+               />
+            </div>
+            
+            <div className="space-y-2">
+               <label className="text-xs font-semibold text-slate-500 uppercase">{t('chartColor')}</label>
+               <div className="flex gap-2 flex-wrap">
+                  {PROFILE_COLORS.map(c => (
+                    <button
+                      key={c}
+                      onClick={() => updateProfile(profile.id, { color: c })}
+                      className={`w-6 h-6 rounded-full border-2 transition-transform hover:scale-110 ${profile.color === c ? 'border-slate-800 scale-110' : 'border-transparent'}`}
+                      style={{ backgroundColor: c }}
+                    />
+                  ))}
+               </div>
+            </div>
+
+             {/* Strategy */}
+             <div className="space-y-2">
+               <label className="text-xs font-semibold text-slate-500 uppercase">{t('strategy')}</label>
+               <select 
+                  value={profile.strategyType} 
+                  onChange={(e) => updateProfile(profile.id, { strategyType: e.target.value as StrategyType })}
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white"
+               >
+                 {STRATEGY_OPTIONS.map((opt) => (
+                   <option key={opt.value} value={opt.value}>{opt.label}</option>
+                 ))}
+               </select>
+            </div>
+
+            <hr className="border-slate-100" />
+
+            {/* Capital */}
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <label className="flex items-center gap-2 text-sm font-medium text-slate-600">
+                  <DollarSign className="w-4 h-4" /> {t('initialCapital')}
+                </label>
+                <input
+                  type="number"
+                  value={profile.config.initialCapital}
+                  onChange={(e) => updateProfile(profile.id, { initialCapital: Number(e.target.value) })}
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label className="flex items-center gap-2 text-sm font-medium text-slate-600">
+                  <Percent className="w-4 h-4" /> {t('cashYield')}
+                </label>
+                <input
+                  type="number"
+                  step="0.1"
+                  value={profile.config.cashYieldAnnual}
+                  onChange={(e) => updateProfile(profile.id, { cashYieldAnnual: Number(e.target.value) })}
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                />
+              </div>
+            </div>
+
+            {/* Contribution */}
+            <div className="p-4 bg-white rounded-xl border border-slate-200 space-y-4 shadow-sm">
+                <div className="flex items-center gap-2 text-sm font-medium text-slate-700">
+                   <TrendingUp className="w-4 h-4 text-green-600" /> {t('recurringInv')}
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                    <div>
+                        <label className="text-[10px] text-slate-500 uppercase font-bold">{t('amount')}</label>
+                        <input
+                            type="number"
+                            value={profile.config.contributionAmount}
+                            onChange={(e) => updateProfile(profile.id, { contributionAmount: Number(e.target.value) })}
+                            className="w-full px-2 py-2 border border-slate-300 rounded-lg outline-none"
+                        />
+                    </div>
+                    <div>
+                        <label className="text-[10px] text-slate-500 uppercase font-bold">{t('freq')}</label>
+                        <select
+                            value={profile.config.contributionIntervalMonths}
+                            onChange={(e) => updateProfile(profile.id, { contributionIntervalMonths: Number(e.target.value) })}
+                            className="w-full px-2 py-2 border border-slate-300 rounded-lg outline-none bg-white text-sm"
+                        >
+                            <option value={1}>{t('monthly')}</option>
+                            <option value={3}>{t('quarterly')}</option>
+                            <option value={12}>{t('yearly')}</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+             {/* Portfolio Allocation */}
+            <div className="space-y-4 pt-2">
+              <div className="flex items-center gap-2 text-sm font-medium text-slate-600 mb-2 border-b border-slate-100 pb-2">
+                <PieChart className="w-4 h-4" /> {t('targetAllocation')}
+              </div>
+              
+              <div>
+                <div className="flex justify-between text-xs mb-1">
+                  <span>QQQ</span>
+                  <span className="font-bold">{profile.config.qqqWeight}%</span>
+                </div>
+                <input
+                  type="range" min="0" max="100"
+                  value={profile.config.qqqWeight}
+                  onChange={(e) => {
+                     const val = Number(e.target.value);
+                     let updates: any = { qqqWeight: val };
+                     if (val + profile.config.qldWeight > 100) updates.qldWeight = Math.max(0, 100 - val);
+                     updateProfile(profile.id, updates);
+                  }}
+                  className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-blue-600"
+                />
+              </div>
+
+              <div>
+                <div className="flex justify-between text-xs mb-1">
+                  <span>QLD (2x)</span>
+                  <span className="font-bold">{profile.config.qldWeight}%</span>
+                </div>
+                <input
+                  type="range" min="0" max="100"
+                  value={profile.config.qldWeight}
+                  onChange={(e) => {
+                     const val = Number(e.target.value);
+                     let updates: any = { qldWeight: val };
+                     if (val + profile.config.qqqWeight > 100) updates.qqqWeight = Math.max(0, 100 - val);
+                     updateProfile(profile.id, updates);
+                  }}
+                  className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-purple-600"
+                />
+              </div>
+
+              <div className="text-xs text-center text-slate-400">
+                {t('cash')}: {cashWeight.toFixed(1)}%
+              </div>
+            </div>
+
+            {/* Contribution Allocation */}
+            <div className="space-y-4 pt-4">
+              <div className="flex items-center gap-2 text-sm font-medium text-slate-600 mb-2 border-b border-slate-100 pb-2">
+                <Coins className="w-4 h-4" /> {t('contributionAllocation')}
+              </div>
+              
+              <div>
+                <div className="flex justify-between text-xs mb-1">
+                  <span>DCA (QQQ)</span>
+                  <span className="font-bold">{profile.config.contributionQqqWeight}%</span>
+                </div>
+                <input
+                  type="range" min="0" max="100"
+                  value={profile.config.contributionQqqWeight}
+                  onChange={(e) => {
+                     const val = Number(e.target.value);
+                     let updates: any = { contributionQqqWeight: val };
+                     if (val + profile.config.contributionQldWeight > 100) updates.contributionQldWeight = Math.max(0, 100 - val);
+                     updateProfile(profile.id, updates);
+                  }}
+                  className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-blue-600"
+                />
+              </div>
+
+              <div>
+                <div className="flex justify-between text-xs mb-1">
+                  <span>DCA (QLD)</span>
+                  <span className="font-bold">{profile.config.contributionQldWeight}%</span>
+                </div>
+                <input
+                  type="range" min="0" max="100"
+                  value={profile.config.contributionQldWeight}
+                  onChange={(e) => {
+                     const val = Number(e.target.value);
+                     let updates: any = { contributionQldWeight: val };
+                     if (val + profile.config.contributionQqqWeight > 100) updates.contributionQqqWeight = Math.max(0, 100 - val);
+                     updateProfile(profile.id, updates);
+                  }}
+                  className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-purple-600"
+                />
+              </div>
+               <div className="text-xs text-center text-slate-400">
+                {t('dcaCash')}: {contribCashWeight.toFixed(1)}%
+              </div>
+            </div>
+
+            {/* Stock Pledge / Leverage */}
+            <div className="p-4 bg-yellow-50 rounded-xl border border-yellow-100 space-y-4 mt-6">
+                <div className="flex items-center justify-between text-sm font-medium text-yellow-800">
+                   <div className="flex items-center gap-2">
+                       <Landmark className="w-4 h-4" /> {t('stockPledge')}
+                   </div>
+                   <label className="relative inline-flex items-center cursor-pointer">
+                      <input 
+                        type="checkbox" 
+                        checked={profile.config.leverage?.enabled || false}
+                        onChange={(e) => updateLeverage(profile.id, { enabled: e.target.checked })}
+                        className="sr-only peer"
+                      />
+                      <div className="w-9 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-yellow-600"></div>
+                   </label>
+                </div>
+                
+                {profile.config.leverage?.enabled && (
+                   <div className="space-y-4 animate-in slide-in-from-top-2 duration-200">
+                        <div className="grid grid-cols-2 gap-3">
+                             <div>
+                                <label className="text-[10px] text-yellow-700 uppercase font-bold">{t('loanRate')}</label>
+                                <input
+                                    type="number"
+                                    step="0.1"
+                                    value={profile.config.leverage.interestRate}
+                                    onChange={(e) => updateLeverage(profile.id, { interestRate: Number(e.target.value) })}
+                                    className="w-full px-2 py-2 border border-yellow-200 rounded-lg outline-none"
+                                />
+                             </div>
+                             <div>
+                                <label className="text-[10px] text-yellow-700 uppercase font-bold" title="Liquidation LTV">{t('maxLtv')}</label>
+                                <input
+                                    type="number"
+                                    step="1"
+                                    value={profile.config.leverage.maxLtv}
+                                    onChange={(e) => updateLeverage(profile.id, { maxLtv: Number(e.target.value) })}
+                                    className="w-full px-2 py-2 border border-yellow-200 rounded-lg outline-none"
+                                />
+                             </div>
+                        </div>
+
+                        <div>
+                            <label className="text-[10px] text-yellow-700 uppercase font-bold mb-1 block">{t('annualCashOut')}</label>
+                            <div className="flex gap-2">
+                                <select 
+                                   value={profile.config.leverage.withdrawType}
+                                   onChange={(e) => updateLeverage(profile.id, { withdrawType: e.target.value as any })}
+                                   className="bg-white border border-yellow-200 rounded-lg px-2 text-sm outline-none w-28"
+                                >
+                                    <option value="PERCENT">{t('percentOfQqq')}</option>
+                                    <option value="FIXED">{t('fixedAmount')}</option>
+                                </select>
+                                <input
+                                    type="number"
+                                    step="0.1"
+                                    value={profile.config.leverage.withdrawValue}
+                                    onChange={(e) => updateLeverage(profile.id, { withdrawValue: Number(e.target.value) })}
+                                    className="w-full px-2 py-2 border border-yellow-200 rounded-lg outline-none"
+                                />
+                            </div>
+                            <p className="text-[10px] text-yellow-600 mt-1 italic">
+                                {t('leverageWarning')}
+                            </p>
+                        </div>
+                   </div>
+                )}
+            </div>
+
+            <button
+               onClick={() => setEditingProfileId(null)}
+               className="w-full py-2 bg-slate-800 text-white rounded-lg flex items-center justify-center gap-2 hover:bg-slate-900 mt-4"
+            >
+               <Check className="w-4 h-4"/> {t('done')}
+            </button>
+         </div>
+       </div>
+    );
+  }
+
+  // --------------------------------------------------------------------------
+  // List View
+  // --------------------------------------------------------------------------
+  return (
+    <div className="flex flex-col">
+      <div className="flex items-center gap-2 mb-4 text-slate-800">
+        <Settings className="w-6 h-6 text-blue-600" />
+        <h2 className="text-lg font-bold">{t('profiles')}</h2>
+      </div>
+
+      <div className="space-y-4">
+        {profiles.map(profile => (
+           <div 
+             key={profile.id}
+             onClick={() => setEditingProfileId(profile.id)}
+             className="group relative p-4 rounded-xl border border-slate-200 hover:border-blue-300 hover:shadow-md transition-all cursor-pointer bg-white"
+           >
+              <div className="flex justify-between items-start mb-2">
+                 <div className="flex items-center gap-2">
+                    <span className="w-3 h-3 rounded-full" style={{ backgroundColor: profile.color }}></span>
+                    <span className="font-bold text-slate-800 text-sm">{profile.name}</span>
+                 </div>
+                 <button 
+                   onClick={(e) => handleDeleteProfile(e, profile.id)}
+                   className="opacity-0 group-hover:opacity-100 p-1 hover:text-red-600 text-slate-400 transition-opacity"
+                 >
+                    <Trash2 className="w-4 h-4" />
+                 </button>
+              </div>
+              
+              <div className="text-xs text-slate-500 mb-3">
+                 {getStrategyLabel(profile.strategyType)}
+              </div>
+
+              <div className="flex flex-col gap-1">
+                <div className="flex gap-2 text-[10px] font-mono text-slate-600 items-center">
+                   <span className="text-slate-400 w-8">Init:</span>
+                   <span className="px-2 py-0.5 bg-blue-100 text-blue-700 rounded">Q:{profile.config.qqqWeight}</span>
+                   <span className="px-2 py-0.5 bg-purple-100 text-purple-700 rounded">2x:{profile.config.qldWeight}</span>
+                </div>
+                {profile.config.leverage?.enabled && (
+                    <div className="flex gap-2 text-[10px] font-mono text-yellow-700 items-center mt-1">
+                       <Landmark className="w-3 h-3" />
+                       <span className="bg-yellow-100 px-2 py-0.5 rounded">
+                          {t('stockPledge')}: {profile.config.leverage.withdrawValue}{profile.config.leverage.withdrawType === 'PERCENT' ? '%' : '$'}
+                       </span>
+                    </div>
+                )}
+              </div>
+              
+              <div className="absolute top-1/2 right-4 -translate-y-1/2 opacity-0 group-hover:opacity-100 text-blue-500">
+                 <Edit2 className="w-4 h-4" />
+              </div>
+           </div>
+        ))}
+        
+        <button 
+           onClick={handleAddProfile}
+           className="w-full py-3 border-2 border-dashed border-slate-300 rounded-xl text-slate-400 flex items-center justify-center gap-2 hover:border-blue-400 hover:text-blue-500 transition-colors"
+        >
+           <Plus className="w-5 h-5" /> {t('addProfile')}
+        </button>
+
+        <button
+            onClick={onRun}
+            className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg shadow-md transition-all active:scale-95 flex items-center justify-center gap-2"
+        >
+           {t('runComparison')}
+        </button>
+      </div>
+    </div>
+  );
+};
