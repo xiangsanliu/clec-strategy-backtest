@@ -1,4 +1,4 @@
-import { AssetConfig, MarketDataRow, PortfolioState, StrategyFunction, StrategyType } from "../types";
+import { AssetConfig, StrategyFunction, StrategyType } from "../types";
 
 const getAssetAllocation = (config: AssetConfig) => {
   const cashWeight = Math.max(0, 100 - config.qqqWeight - config.qldWeight);

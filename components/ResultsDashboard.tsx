@@ -271,7 +271,7 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({ results }) =
                </tr>
              </thead>
              <tbody>
-               {results.map((res, idx) => (
+               {results.map((res) => (
                  <tr key={res.strategyName} className={`border-b border-slate-100 last:border-0 hover:bg-slate-50 ${res.isBankrupt ? 'bg-red-50 hover:bg-red-100' : ''}`}>
                    <td className="px-4 py-3 font-medium text-slate-900 flex items-center gap-2">
                       <span className="w-2 h-2 rounded-full" style={{backgroundColor: res.color }}></span>

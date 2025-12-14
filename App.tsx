@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { ConfigPanel } from './components/ConfigPanel';
 import { ResultsDashboard } from './components/ResultsDashboard';
 import { MARKET_DATA } from './constants';
