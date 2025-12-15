@@ -9,7 +9,10 @@ export interface MarketDataRow {
 export interface LeverageConfig {
   enabled: boolean;
   interestRate: number; // Annual interest rate for the loan
-  maxLtv: number; // Max Loan-to-Value ratio (Adequacy ratio) before bankruptcy/call
+  // Pledge Ratios (0.0 - 1.0)
+  qqqPledgeRatio: number; // e.g., 0.70
+  cashPledgeRatio: number; // e.g., 0.95
+  maxLtv: number; // User's safety stop (Liquidation usually happens at 100% of Pledged Collateral)
   withdrawType: 'PERCENT' | 'FIXED';
   withdrawValue: number; // Percentage (e.g. 2.0) or Fixed Amount
 }

@@ -35,7 +35,9 @@ const DEFAULT_ASSET_CONFIG: AssetConfig = {
   leverage: {
     enabled: false,
     interestRate: 5.0,
-    maxLtv: 60.0,
+    qqqPledgeRatio: 0.7,
+    cashPledgeRatio: 0.95,
+    maxLtv: 100.0,
     withdrawType: 'PERCENT',
     withdrawValue: 2.0
   }
@@ -336,6 +338,7 @@ export const ConfigPanel: React.FC<ConfigPanelProps> = ({ profiles, onProfilesCh
                 
                 {profile.config.leverage?.enabled && (
                    <div className="space-y-4 animate-in slide-in-from-top-2 duration-200">
+                        {/* Row 1: Interest Rate & Max LTV */}
                         <div className="grid grid-cols-2 gap-3">
                              <div>
                                 <label className="text-[10px] text-yellow-700 uppercase font-bold">{t('loanRate')}</label>
@@ -359,6 +362,42 @@ export const ConfigPanel: React.FC<ConfigPanelProps> = ({ profiles, onProfilesCh
                              </div>
                         </div>
 
+                        {/* Row 2: Pledge Ratios */}
+                        <div className="grid grid-cols-2 gap-3 bg-yellow-100/50 p-2 rounded-lg">
+                            <div>
+                                <label className="text-[10px] text-yellow-800 uppercase font-bold">{t('pledgeRatioQQQ')}</label>
+                                <input
+                                    type="number"
+                                    step="0.05"
+                                    min="0" max="1"
+                                    value={profile.config.leverage.qqqPledgeRatio ?? 0.7}
+                                    onChange={(e) => updateLeverage(profile.id, { qqqPledgeRatio: Number(e.target.value) })}
+                                    className="w-full px-2 py-1.5 border border-yellow-200 rounded outline-none text-sm"
+                                />
+                            </div>
+                            <div>
+                                <label className="text-[10px] text-yellow-800 uppercase font-bold">{t('pledgeRatioCash')}</label>
+                                <input
+                                    type="number"
+                                    step="0.01"
+                                    min="0" max="1"
+                                    value={profile.config.leverage.cashPledgeRatio ?? 0.95}
+                                    onChange={(e) => updateLeverage(profile.id, { cashPledgeRatio: Number(e.target.value) })}
+                                    className="w-full px-2 py-1.5 border border-yellow-200 rounded outline-none text-sm"
+                                />
+                            </div>
+                            <div className="col-span-2">
+                                <label className="text-[10px] text-slate-400 uppercase font-bold">Pledge Ratio QLD (2x Leverage)</label>
+                                <input
+                                    type="number"
+                                    disabled
+                                    value="0.0"
+                                    className="w-full px-2 py-1.5 border border-slate-100 bg-slate-50 text-slate-400 rounded outline-none text-sm cursor-not-allowed"
+                                />
+                            </div>
+                        </div>
+
+                        {/* Row 3: Withdrawal Settings */}
                         <div>
                             <label className="text-[10px] text-yellow-700 uppercase font-bold mb-1 block">{t('annualCashOut')}</label>
                             <div className="flex gap-2">
@@ -378,7 +417,7 @@ export const ConfigPanel: React.FC<ConfigPanelProps> = ({ profiles, onProfilesCh
                                     className="w-full px-2 py-2 border border-yellow-200 rounded-lg outline-none"
                                 />
                             </div>
-                            <p className="text-[10px] text-yellow-600 mt-1 italic">
+                            <p className="text-[10px] text-yellow-600 mt-2 italic leading-tight">
                                 {t('leverageWarning')}
                             </p>
                         </div>
