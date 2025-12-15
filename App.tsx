@@ -21,7 +21,9 @@ const DEFAULT_CONFIG_A: AssetConfig = {
   leverage: {
     enabled: false,
     interestRate: 5.0,
-    maxLtv: 60,
+    qqqPledgeRatio: 0.7,
+    cashPledgeRatio: 0.95,
+    maxLtv: 100, // Default 100% of PLEDGED value (Broker Limit)
     withdrawType: 'PERCENT',
     withdrawValue: 2.0
   }
@@ -40,7 +42,9 @@ const DEFAULT_CONFIG_B: AssetConfig = {
   leverage: {
     enabled: false,
     interestRate: 5.0,
-    maxLtv: 60,
+    qqqPledgeRatio: 0.7,
+    cashPledgeRatio: 0.95,
+    maxLtv: 100,
     withdrawType: 'PERCENT',
     withdrawValue: 2.0
   }

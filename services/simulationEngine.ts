@@ -24,7 +24,13 @@ export const runBacktest = (
   const monthlyCashYieldRate = Math.pow(1 + config.cashYieldAnnual / 100, 1 / 12) - 1;
   
   // Debt settings
-  const leverage = config.leverage || { enabled: false, interestRate: 0, maxLtv: 0, withdrawType: 'PERCENT', withdrawValue: 0 };
+  // Default ratios: QQQ 0.7 (70%), Cash 0.95 (95%) if not defined. QLD is 0.
+  const leverage = {
+      ...config.leverage,
+      qqqPledgeRatio: config.leverage?.qqqPledgeRatio ?? 0.7,
+      cashPledgeRatio: config.leverage?.cashPledgeRatio ?? 0.95
+  };
+  
   const monthlyLoanRate = leverage.enabled ? Math.pow(1 + leverage.interestRate / 100, 1 / 12) - 1 : 0;
   
   let isBankrupt = false;
@@ -34,7 +40,7 @@ export const runBacktest = (
     const dataRow = marketData[index];
 
     if (isBankrupt) {
-      // If bankrupt, portfolio stays at 0 (or strictly debt limited)
+      // If bankrupt, portfolio stays at 0
       history.push({
         ...currentState,
         date: dataRow.date,
@@ -45,68 +51,89 @@ export const runBacktest = (
       continue;
     }
 
-    // 1. Banking Logic: Interest
+    // 1. Banking Logic: Interest Accrual
     if (index > 0) {
-      // Interest on Cash Savings
+      // Interest on Cash Savings (Asset grows)
       currentState.cashBalance *= (1 + monthlyCashYieldRate);
-      // Interest on Debt (accrues to balance)
+      
+      // Interest on Debt (Liability grows)
       if (leverage.enabled && currentState.debtBalance > 0) {
          currentState.debtBalance *= (1 + monthlyLoanRate);
       }
     }
 
-    // 2. Execute Investment Strategy (Trading)
+    // 2. Execute Investment Strategy (Trading / Rebalancing)
+    // This updates shares and cashBalance based on strategy (DCA, Rebalance, etc.)
     currentState = strategyFunc(currentState, dataRow, config, index);
 
-    // 3. Leverage / Pledging Logic (Borrowing Cash)
+    // 3. Leverage / Pledging Logic (Borrowing & Risk Check)
     if (leverage.enabled) {
        const currentMonth = parseInt(dataRow.date.substring(5, 7)) - 1;
        
-       // Annual Withdrawal in January
-       // We only withdraw if we have existing collateral (shares)
-       if (currentMonth === 0 && index > 0 && currentState.shares.QQQ > 0) {
-           const qqqValue = currentState.shares.QQQ * dataRow.qqq;
+       // Calculate Asset Values
+       const qqqValue = currentState.shares.QQQ * dataRow.qqq;
+       const qldValue = currentState.shares.QLD * dataRow.qld;
+       const cashValue = currentState.cashBalance;
+       
+       // STRATEGY: Total Asset Withdrawal Base
+       // "Annual Cash Out" is calculated based on TOTAL Net Worth/Assets (including QLD), 
+       // representing the user's lifestyle cost relative to their wealth.
+       const totalAssetValue = qqqValue + qldValue + cashValue;
+       
+       // RISK MANAGEMENT: Quality Asset Pledge Only
+       // Effective Collateral = (QQQ * Ratio) + (Cash * Ratio). 
+       // CRITICAL: QLD is EXCLUDED (Ratio 0.0) from collateral due to high volatility.
+       const effectiveCollateral = (qqqValue * leverage.qqqPledgeRatio) + (cashValue * leverage.cashPledgeRatio);
+
+       // Annual Withdrawal Logic (in January)
+       // We only withdraw if we are not already underwater on collateral
+       if (currentMonth === 0 && index > 0 && effectiveCollateral > 0) {
            let borrowAmount = 0;
            
            if (leverage.withdrawType === 'PERCENT') {
-               borrowAmount = qqqValue * (leverage.withdrawValue / 100);
+               // Withdraw % of TOTAL Portfolio Assets
+               borrowAmount = totalAssetValue * (leverage.withdrawValue / 100);
            } else {
                borrowAmount = leverage.withdrawValue;
            }
            
-           // Adding to debt.
-           // Note: We do NOT add to cashBalance because the premise is "Cash Out" (withdrawn for living).
-           // If we added to cashBalance, the strategy might reinvest it, which is double leverage.
+           // CRITICAL LOGIC CONFIRMATION:
+           // 1. Debt INCREASES by borrowAmount.
+           // 2. Cash DOES NOT INCREASE. The money is withdrawn from the broker to a personal bank account and spent.
+           // Result: Net Equity decreases by borrowAmount.
            currentState.debtBalance += borrowAmount;
        }
 
-       // Solvency Check (Bankruptcy)
-       const qqqValue = currentState.shares.QQQ * dataRow.qqq;
-       
-       // Calculate LTV. If QQQ Value is 0, LTV is infinite if debt > 0.
-       if (qqqValue > 0) {
-          currentState.ltv = (currentState.debtBalance / qqqValue) * 100;
+       // Solvency / Bankruptcy Check
+       // LTV = Debt / EffectiveCollateral.
+       // If Debt > EffectiveCollateral, the broker liquidates (LTV > 100% of Pledged Value).
+       // Note: effectiveCollateral can be 0 if user holds only QLD. In that case, any debt triggers bankruptcy.
+       if (effectiveCollateral > 0) {
+          currentState.ltv = (currentState.debtBalance / effectiveCollateral) * 100;
        } else {
-          currentState.ltv = currentState.debtBalance > 0 ? 1000 : 0;
+          // If debt exists but no collateral (e.g. 100% QLD), instant bankruptcy
+          currentState.ltv = currentState.debtBalance > 0 ? 9999 : 0;
        }
 
+       // Trigger Bankruptcy if Debt exceeds the safety limit (maxLtv) of the Collateral
+       // Example: maxLtv is 100%. If Debt > Collateral Value, game over.
        if (currentState.ltv > leverage.maxLtv) {
           isBankrupt = true;
           bankruptcyDate = dataRow.date;
-          // Clean up state for final record
+          // Zero out value to represent total liquidation
           currentState.totalValue = 0;
        }
     }
 
     // 4. Update Net Value
     if (!isBankrupt) {
-        // Assets
+        // Total Assets
         const assets = 
             (currentState.shares.QQQ * dataRow.qqq) +
             (currentState.shares.QLD * dataRow.qld) +
             currentState.cashBalance;
         
-        // Net Equity
+        // Net Equity = Assets - Debt
         currentState.totalValue = Math.max(0, assets - currentState.debtBalance);
     }
 
