@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { AssetConfig, Profile, StrategyType } from '../types';
-import { Settings, DollarSign, PieChart, TrendingUp, Plus, Trash2, Edit2, ArrowLeft, Check, Coins, Percent, Landmark } from 'lucide-react';
+import { Settings, DollarSign, PieChart, TrendingUp, Plus, Trash2, Edit2, ArrowLeft, Check, Coins, Percent, Landmark, Info, AlertOctagon } from 'lucide-react';
 import { useTranslation } from '../services/i18n';
 
 interface ConfigPanelProps {
@@ -57,6 +57,17 @@ export const ConfigPanel: React.FC<ConfigPanelProps> = ({ profiles, onProfilesCh
 
   const getStrategyLabel = (type: StrategyType) => {
     return STRATEGY_OPTIONS.find(o => o.value === type)?.label || type;
+  };
+
+  const getRiskLevel = (ltv: number) => {
+    // Relationships based on user education:
+    // 60% LTV = 167% Margin (Safe/Standard in TW)
+    // 70% LTV = 143% Margin (Buffer zone)
+    // 80% LTV = 125% Margin (High Risk)
+    if (ltv <= 60) return { label: t('riskSafe'), color: 'text-green-600', bg: 'bg-green-100', icon: Check };
+    if (ltv <= 70) return { label: t('riskModerate'), color: 'text-blue-600', bg: 'bg-blue-100', icon: Info };
+    if (ltv <= 85) return { label: t('riskAggressive'), color: 'text-orange-600', bg: 'bg-orange-100', icon: AlertOctagon };
+    return { label: t('riskCritical'), color: 'text-red-600', bg: 'bg-red-100', icon: AlertOctagon };
   };
 
   const handleAddProfile = () => {
@@ -116,6 +127,11 @@ export const ConfigPanel: React.FC<ConfigPanelProps> = ({ profiles, onProfilesCh
     
     const cashWeight = Math.max(0, 100 - profile.config.qqqWeight - profile.config.qldWeight);
     const contribCashWeight = Math.max(0, 100 - profile.config.contributionQqqWeight - profile.config.contributionQldWeight);
+
+    // Calculate Maintenance Ratio for UI display
+    const currentMaxLtv = profile.config.leverage?.maxLtv ?? 100;
+    const maintenanceRatio = currentMaxLtv > 0 ? (100 / currentMaxLtv) * 100 : 0;
+    const riskInfo = getRiskLevel(currentMaxLtv);
 
     return (
        <div className="flex flex-col animate-in slide-in-from-right duration-300">
@@ -340,7 +356,7 @@ export const ConfigPanel: React.FC<ConfigPanelProps> = ({ profiles, onProfilesCh
                 {profile.config.leverage?.enabled && (
                    <div className="space-y-4 animate-in slide-in-from-top-2 duration-200">
                         {/* Row 1: Interest Rate & Max LTV */}
-                        <div className="grid grid-cols-2 gap-3">
+                        <div className="grid grid-cols-1 gap-3">
                              <div>
                                 <label className="text-[10px] text-yellow-700 uppercase font-bold">{t('loanRate')}</label>
                                 <input
@@ -351,15 +367,37 @@ export const ConfigPanel: React.FC<ConfigPanelProps> = ({ profiles, onProfilesCh
                                     className="w-full px-2 py-2 border border-yellow-200 rounded-lg outline-none"
                                 />
                              </div>
-                             <div>
-                                <label className="text-[10px] text-yellow-700 uppercase font-bold" title="Liquidation LTV">{t('maxLtv')}</label>
-                                <input
-                                    type="number"
-                                    step="1"
-                                    value={profile.config.leverage.maxLtv}
-                                    onChange={(e) => updateLeverage(profile.id, { maxLtv: Number(e.target.value) })}
-                                    className="w-full px-2 py-2 border border-yellow-200 rounded-lg outline-none"
-                                />
+                             
+                             {/* Enhanced LTV / Maintenance Ratio Input */}
+                             <div className="bg-white p-3 rounded-lg border border-yellow-200">
+                                <div className="flex justify-between items-center mb-1">
+                                    <label className="text-[10px] text-yellow-700 uppercase font-bold flex items-center gap-1" title="If Debt > This % of Collateral, liquidation occurs">
+                                      {t('maxLtv')} <Info className="w-3 h-3 text-yellow-400"/>
+                                    </label>
+                                    <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded flex items-center gap-1 ${riskInfo.color} ${riskInfo.bg}`}>
+                                       <riskInfo.icon className="w-3 h-3"/> {riskInfo.label}
+                                    </span>
+                                </div>
+                                <div className="flex gap-2 items-center">
+                                    <input
+                                        type="number"
+                                        step="1"
+                                        min="1"
+                                        max="100"
+                                        value={profile.config.leverage.maxLtv}
+                                        onChange={(e) => updateLeverage(profile.id, { maxLtv: Number(e.target.value) })}
+                                        className="w-20 px-2 py-2 border border-slate-200 rounded-lg outline-none font-mono text-center font-bold text-slate-700 focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
+                                    />
+                                    <div className="flex-1 flex flex-col justify-center pl-2 border-l border-slate-100">
+                                       <span className="text-[10px] text-slate-400 uppercase font-bold">{t('maintMargin')}</span>
+                                       <span className="text-lg font-bold text-slate-600 font-mono leading-none">
+                                          {maintenanceRatio.toFixed(0)}%
+                                       </span>
+                                    </div>
+                                </div>
+                                <p className="text-[10px] text-slate-400 mt-1 leading-tight">
+                                   {t('ltvNote')}
+                                </p>
                              </div>
                         </div>
 
@@ -483,7 +521,7 @@ export const ConfigPanel: React.FC<ConfigPanelProps> = ({ profiles, onProfilesCh
                     <div className="flex gap-2 text-[10px] font-mono text-yellow-700 items-center mt-1">
                        <Landmark className="w-3 h-3" />
                        <span className="bg-yellow-100 px-2 py-0.5 rounded">
-                          {t('stockPledge')}: {profile.config.leverage.withdrawValue}{profile.config.leverage.withdrawType === 'PERCENT' ? '%' : '$'}
+                          LTV: {profile.config.leverage.maxLtv}%
                        </span>
                     </div>
                 )}
