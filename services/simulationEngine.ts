@@ -54,10 +54,6 @@ export const runBacktest = (
       continue;
     }
 
-    // Capture state before banking/strategy logic to detect changes
-    const preStrategyCash = currentState.cashBalance;
-    const preStrategyShares = { ...currentState.shares };
-
     // 1. Banking Logic: Interest Accrual & Debt Service
     if (index > 0) {
       // Step A: Accrue Interest on Cash

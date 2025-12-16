@@ -1,9 +1,9 @@
 
 import React, { useState } from 'react';
-import { SimulationResult, PortfolioState } from '../types';
+import { SimulationResult } from '../types';
 import { MARKET_DATA } from '../constants';
 import { useTranslation } from '../services/i18n';
-import { X, FileText, PieChart, ArrowDown, ArrowUp } from 'lucide-react';
+import { X, FileText, PieChart } from 'lucide-react';
 
 interface FinancialReportModalProps {
   result: SimulationResult;
@@ -63,7 +63,7 @@ export const FinancialReportModal: React.FC<FinancialReportModalProps> = ({ resu
            
            {activeTab === 'BALANCE' && (
               <div className="space-y-6">
-                 {balanceSheetHistory.map((state, idx) => {
+                 {balanceSheetHistory.map((state) => {
                     const qqqVal = state.shares.QQQ * (MARKET_DATA.find(m => m.date === state.date)?.qqq || 0);
                     const qldVal = state.shares.QLD * (MARKET_DATA.find(m => m.date === state.date)?.qld || 0);
                     const totalAssets = qqqVal + qldVal + state.cashBalance;
