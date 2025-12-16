@@ -212,6 +212,8 @@ export const runBacktest = (
           currentState.ltv = currentState.debtBalance > 0 ? 9999 : 0;
        }
 
+       // Trigger Bankruptcy if Debt exceeds the safety limit (maxLtv) of the Collateral
+       // Example: maxLtv is 100%. If Debt > Collateral Value, game over.
        if (currentState.ltv > leverage.maxLtv) {
           isBankrupt = true;
           bankruptcyDate = dataRow.date;
