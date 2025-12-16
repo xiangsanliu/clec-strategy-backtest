@@ -20,6 +20,7 @@ export const runBacktest = (
     totalValue: 0,
     strategyMemory: {},
     ltv: 0,
+    beta: 0,
     events: []
   };
 
@@ -49,6 +50,7 @@ export const runBacktest = (
         totalValue: 0,
         shares: { ...currentState.shares },
         ltv: 0,
+        beta: 0,
         events: [{ type: 'INFO', description: 'Account Bankrupt' }]
       });
       continue;
@@ -221,13 +223,24 @@ export const runBacktest = (
        }
     }
 
-    // 4. Update Net Value
+    // 4. Update Net Value & Risk Metrics
     if (!isBankrupt) {
-        const assets = 
-            (currentState.shares.QQQ * dataRow.qqq) +
-            (currentState.shares.QLD * dataRow.qld) +
-            currentState.cashBalance;
+        const qqqVal = currentState.shares.QQQ * dataRow.qqq;
+        const qldVal = currentState.shares.QLD * dataRow.qld;
+        const cashVal = currentState.cashBalance;
+        
+        const assets = qqqVal + qldVal + cashVal;
         currentState.totalValue = Math.max(0, assets - currentState.debtBalance);
+
+        // Calculate Beta
+        // Beta Reference: QQQ=1, Cash=0, QLD=2.
+        // We calculate weighted beta based on Equity to show effective leverage.
+        // Formula: (ValQQQ*1 + ValQLD*2 + Cash*0) / NetEquity
+        if (currentState.totalValue > 0) {
+          currentState.beta = ((qqqVal * 1) + (qldVal * 2)) / currentState.totalValue;
+        } else {
+          currentState.beta = 0;
+        }
     }
 
     // 5. Record History

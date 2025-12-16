@@ -69,6 +69,7 @@ export interface PortfolioState {
   // Metadata for complex strategies (e.g., Smart Adjust)
   strategyMemory: Record<string, any>;
   ltv: number; // Loan to Value ratio for this step
+  beta: number; // Portfolio Beta relative to QQQ
   
   // New: Detailed logs for accounting reports
   events: FinancialEvent[];

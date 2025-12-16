@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { SimulationResult } from '../types';
 import { ComposedChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, Legend } from 'recharts';
-import { TrendingDown, Percent, DollarSign, Activity, Trophy, AlertTriangle, Scale, HelpCircle } from 'lucide-react';
+import { TrendingDown, Percent, DollarSign, Activity, Trophy, AlertTriangle, Scale, HelpCircle, Zap } from 'lucide-react';
 import { useTranslation } from '../services/i18n';
 import { MathModelModal } from './MathModelModal';
 
@@ -47,7 +47,9 @@ const CustomTooltip = ({ active, payload, label }: any) => {
             <span className="w-2 h-2 rounded-full" style={{ backgroundColor: p.color }}></span>
             <span>{p.name}:</span>
             <span className="font-mono font-bold">
-                {typeof p.value === 'number' && (p.name.includes('%') || p.name.includes('LTV')) ? `${Number(p.value).toFixed(1)}%` : `$${Number(p.value).toLocaleString(undefined, { maximumFractionDigits: 0 })}`}
+                {typeof p.value === 'number' && (p.name.includes('%') || p.name.includes('LTV') || p.name.includes('Beta')) 
+                  ? `${Number(p.value).toFixed(2)}${p.name.includes('Beta') ? '' : '%'}` 
+                  : `$${Number(p.value).toLocaleString(undefined, { maximumFractionDigits: 0 })}`}
             </span>
           </div>
         ))}
@@ -112,6 +114,14 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({ results }) =
         });
      });
   }
+
+  // Prepare Beta Data
+  const betaData = results[0].history.map((h) => ({ date: h.date }));
+  results.forEach(res => {
+    res.history.forEach((h, idx) => {
+      (betaData[idx] as any)[res.strategyName] = h.beta;
+    });
+  });
 
   // Prepare Cash Data for ALL profiles that have cash usage
   const cashCharts = results.map(res => {
@@ -231,6 +241,39 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({ results }) =
                   stroke={res.color} 
                   strokeWidth={2}
                   dot={false}
+                />
+              ))}
+            </LineChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
+
+      {/* Beta Chart */}
+      <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+        <div className="flex items-center gap-2 mb-2">
+             <h3 className="text-lg font-bold text-slate-800">{t('betaChartTitle')}</h3>
+             <span className="bg-blue-100 text-blue-800 text-xs px-2 py-0.5 rounded font-bold border border-blue-200 flex items-center gap-1">
+                 <Zap className="w-3 h-3"/> Risk
+             </span>
+        </div>
+        <p className="text-sm text-slate-500 mb-4">{t('betaChartDesc')}</p>
+        <div className="h-[300px]">
+          <ResponsiveContainer width="100%" height="100%">
+            <LineChart data={betaData}>
+              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
+              <XAxis dataKey="date" tick={{fontSize: 12}} tickFormatter={(val) => val.substring(0,4)} stroke="#94a3b8" />
+              <YAxis tick={{fontSize: 12}} stroke="#94a3b8" domain={[0, 'auto']} />
+              <Tooltip content={<CustomTooltip />} />
+              <Legend />
+              {results.map((res) => (
+                <Line 
+                  key={res.strategyName}
+                  type="monotone" 
+                  dataKey={res.strategyName} 
+                  stroke={res.color} 
+                  strokeWidth={2}
+                  dot={false}
+                  name={`${res.strategyName} Beta`}
                 />
               ))}
             </LineChart>
