@@ -43,7 +43,8 @@ const DEFAULT_ASSET_CONFIG: AssetConfig = {
     cashPledgeRatio: 0.95,
     maxLtv: 100.0,
     withdrawType: 'PERCENT',
-    withdrawValue: 2.0
+    withdrawValue: 2.0,
+    inflationRate: 0.0 // Default 0%
   }
 };
 
@@ -459,6 +460,18 @@ export const ConfigPanel: React.FC<ConfigPanelProps> = ({ profiles, onProfilesCh
                                     className="w-full px-2 py-2 border border-yellow-200 rounded-lg outline-none"
                                 />
                             </div>
+                            {profile.config.leverage.withdrawType === 'FIXED' && (
+                                <div className="mt-2">
+                                    <label className="text-[10px] text-yellow-700 uppercase font-bold mb-1 block">{t('inflationRate')}</label>
+                                    <input
+                                        type="number"
+                                        step="0.1"
+                                        value={profile.config.leverage.inflationRate || 0}
+                                        onChange={(e) => updateLeverage(profile.id, { inflationRate: Number(e.target.value) })}
+                                        className="w-full px-2 py-2 border border-yellow-200 rounded-lg outline-none"
+                                    />
+                                </div>
+                            )}
                             <p className="text-[10px] text-yellow-600 mt-2 italic leading-tight">
                                 {t('leverageWarning')}
                             </p>

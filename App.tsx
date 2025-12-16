@@ -28,7 +28,8 @@ const DEFAULT_CONFIG_A: AssetConfig = {
     cashPledgeRatio: 0.95,
     maxLtv: 100, // Default 100% of PLEDGED value (Broker Limit)
     withdrawType: 'PERCENT',
-    withdrawValue: 2.0
+    withdrawValue: 2.0,
+    inflationRate: 0.0
   }
 };
 
@@ -50,7 +51,8 @@ const DEFAULT_CONFIG_B: AssetConfig = {
     cashPledgeRatio: 0.95,
     maxLtv: 100,
     withdrawType: 'PERCENT',
-    withdrawValue: 2.0
+    withdrawValue: 2.0,
+    inflationRate: 0.0
   }
 };
 

@@ -178,7 +178,14 @@ export const runBacktest = (
            if (leverage.withdrawType === 'PERCENT') {
                borrowAmount = totalAssetValue * (leverage.withdrawValue / 100);
            } else {
-               borrowAmount = leverage.withdrawValue;
+               // Fixed Amount withdrawal with Inflation adjustment
+               // Formula: Borrow = InitialFixed * (1 + inflation)^n
+               // n = Years passed. 
+               // Index 0 (Month 1, Year 1) -> n=0 -> Base Amount
+               // Index 12 (Month 1, Year 2) -> n=1 -> Base * (1+inf)
+               const yearsPassed = Math.floor(index / 12);
+               const inflationFactor = Math.pow(1 + (leverage.inflationRate || 0) / 100, yearsPassed);
+               borrowAmount = leverage.withdrawValue * inflationFactor;
            }
            
            if (borrowAmount > 0) {

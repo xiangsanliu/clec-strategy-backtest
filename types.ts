@@ -17,6 +17,7 @@ export interface LeverageConfig {
   maxLtv: number; // User's safety stop (Liquidation usually happens at 100% of Pledged Collateral)
   withdrawType: 'PERCENT' | 'FIXED';
   withdrawValue: number; // Percentage (e.g. 2.0) or Fixed Amount
+  inflationRate: number; // Annual inflation rate for FIXED withdrawals
 }
 
 export interface AssetConfig {
