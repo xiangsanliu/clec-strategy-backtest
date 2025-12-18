@@ -2,9 +2,10 @@
 import React, { useState } from 'react';
 import { SimulationResult } from '../types';
 import { ComposedChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, Legend, BarChart, Bar } from 'recharts';
-import { TrendingUp, Percent, Activity, Trophy, AlertTriangle, Scale, HelpCircle, Zap, ShieldAlert, Calendar, Clock, ChevronUp, ChevronDown, ArrowUpDown } from 'lucide-react';
+import { TrendingUp, Percent, Activity, Trophy, AlertTriangle, Scale, HelpCircle, Zap, ShieldAlert, Calendar, Clock, ChevronUp, ChevronDown, ArrowUpDown, FileDown } from 'lucide-react';
 import { useTranslation } from '../services/i18n';
 import { MathModelModal } from './MathModelModal';
+import { generateProfessionalReport } from '../services/reportService';
 
 interface ResultsDashboardProps {
   results: SimulationResult[];
@@ -64,6 +65,7 @@ const CustomTooltip = ({ active, payload, label }: any) => {
 export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({ results }) => {
   const { t } = useTranslation();
   const [showMath, setShowMath] = useState(false);
+  const [isGeneratingReport, setIsGeneratingReport] = useState(false);
   const [sortConfig, setSortConfig] = useState<{ key: keyof SimulationResult['metrics'] | 'strategyName', direction: 'asc' | 'desc' } | null>(null);
 
   const handleSort = (key: keyof SimulationResult['metrics'] | 'strategyName') => {
@@ -169,6 +171,17 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({ results }) =
     });
   }, [results, sortConfig]);
 
+  const handleDownloadReport = async () => {
+    setIsGeneratingReport(true);
+    try {
+      await generateProfessionalReport(results);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsGeneratingReport(false);
+    }
+  };
+
   const SortIcon = ({ column }: { column: keyof SimulationResult['metrics'] | 'strategyName' }) => {
     if (!sortConfig || sortConfig.key !== column) return <ArrowUpDown className="w-3 h-3 ml-1 opacity-20 group-hover:opacity-100 transition-opacity" />;
     return sortConfig.direction === 'asc' ? <ChevronUp className="w-3 h-3 ml-1 text-blue-600" /> : <ChevronDown className="w-3 h-3 ml-1 text-blue-600" />;
@@ -176,7 +189,6 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({ results }) =
 
   return (
     <div className="space-y-8">
-
       {showMath && <MathModelModal onClose={() => setShowMath(false)} />}
 
       {/* Metrics Row */}
@@ -269,7 +281,7 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({ results }) =
       )}
 
       {/* Main Chart */}
-      <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+      <div id="portfolio-growth-chart" className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
         <h3 className="text-lg font-bold text-slate-800 mb-4">{t('portfolioGrowth')}</h3>
         <div className="h-[400px]">
           <ResponsiveContainer width="100%" height="100%">
@@ -336,7 +348,7 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({ results }) =
       </div>
 
       {/* Drawdown Chart */}
-      <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+      <div id="drawdown-chart" className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
         <h3 className="text-lg font-bold text-slate-800 mb-4">{t('historicalDrawdown')}</h3>
         <div className="h-[300px]">
           <ResponsiveContainer width="100%" height="100%">
@@ -362,7 +374,7 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({ results }) =
       </div>
 
       {/* Beta Chart */}
-      <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+      <div id="beta-chart" className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
         <div className="flex items-center gap-2 mb-2">
           <h3 className="text-lg font-bold text-slate-800">{t('betaChartTitle')}</h3>
           <span className="bg-blue-100 text-blue-800 text-xs px-2 py-0.5 rounded font-bold border border-blue-200 flex items-center gap-1">
@@ -463,14 +475,27 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({ results }) =
 
       {/* Performance Table */}
       <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-        <div className="p-4 border-b border-slate-100 bg-slate-50 flex items-center gap-2">
-          <h3 className="font-bold text-slate-800">{t('perfComparison')}</h3>
+        <div className="p-4 border-b border-slate-100 bg-slate-50 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <h3 className="font-bold text-slate-800">{t('perfComparison')}</h3>
+            <button
+              onClick={() => setShowMath(true)}
+              className="text-slate-400 hover:text-blue-600 hover:bg-blue-50 p-1 rounded-full transition-colors"
+              title={t('math_title')}
+            >
+              <HelpCircle className="w-4 h-4" />
+            </button>
+          </div>
           <button
-            onClick={() => setShowMath(true)}
-            className="text-slate-400 hover:text-blue-600 hover:bg-blue-50 p-1 rounded-full transition-colors"
-            title={t('math_title')}
+            onClick={handleDownloadReport}
+            disabled={isGeneratingReport}
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold transition-all ${isGeneratingReport
+              ? 'bg-slate-100 text-slate-400 cursor-not-allowed'
+              : 'bg-blue-600 text-white hover:bg-blue-700 shadow-sm hover:shadow-md'
+              }`}
           >
-            <HelpCircle className="w-4 h-4" />
+            <FileDown className={`w-4 h-4 ${isGeneratingReport ? 'animate-bounce' : ''}`} />
+            {isGeneratingReport ? '...' : t('downloadReport')}
           </button>
         </div>
         <div className="overflow-x-auto">
