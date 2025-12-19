@@ -59,7 +59,10 @@ export const ConfigPanel: React.FC<ConfigPanelProps> = ({ profiles, onProfilesCh
     { value: 'SMART', label: t('strat_smart') }
   ];
 
-  const getStrategyLabel = (type: StrategyType) => {
+  const getStrategyLabel = (type: string) => {
+    if (type === 'LUMP_SUM' || type === 'DCA') {
+      return t('strat_noRebalance');
+    }
     return STRATEGY_OPTIONS.find(o => o.value === type)?.label || type;
   };
 
