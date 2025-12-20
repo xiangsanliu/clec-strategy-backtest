@@ -18,6 +18,7 @@ export interface LeverageConfig {
   withdrawType: 'PERCENT' | 'FIXED';
   withdrawValue: number; // Percentage (e.g. 2.0) or Fixed Amount
   inflationRate: number; // Annual inflation rate for FIXED withdrawals
+  interestType: 'MONTHLY' | 'MATURITY' | 'CAPITALIZED'; // NEW: Interest payment mode
 }
 
 export interface AssetConfig {
@@ -65,6 +66,7 @@ export interface PortfolioState {
   };
   cashBalance: number;
   debtBalance: number; // New: Track margin loan balance
+  accruedInterest: number; // New: Simple interest accrued but not yet paid (for MATURITY mode)
   totalValue: number; // Net Equity (Assets - Debt)
 
   // Metadata for complex strategies (e.g., Smart Adjust)

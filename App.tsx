@@ -30,7 +30,8 @@ const DEFAULT_CONFIG_A: AssetConfig = {
     maxLtv: 100, // Default 100% of PLEDGED value (Broker Limit)
     withdrawType: 'PERCENT',
     withdrawValue: 2.0,
-    inflationRate: 0.0
+    inflationRate: 0.0,
+    interestType: 'CAPITALIZED'
   }
 };
 
@@ -54,7 +55,8 @@ const DEFAULT_CONFIG_B: AssetConfig = {
     maxLtv: 100,
     withdrawType: 'PERCENT',
     withdrawValue: 2.0,
-    inflationRate: 0.0
+    inflationRate: 0.0,
+    interestType: 'CAPITALIZED'
   }
 };
 

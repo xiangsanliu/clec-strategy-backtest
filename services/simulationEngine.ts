@@ -25,6 +25,7 @@ export const runBacktest = (
     shares: { QQQ: 0, QLD: 0 },
     cashBalance: 0,
     debtBalance: 0,
+    accruedInterest: 0, // NEW: Track unpaid simple interest
     totalValue: 0,
     strategyMemory: {},
     ltv: 0,
@@ -84,35 +85,59 @@ export const runBacktest = (
       }
 
       // Step C: Service the Debt
+      // Step C: Service the Debt
       if (interestDue > 0) {
-        if (currentState.cashBalance >= interestDue) {
-          // Scenario: Liquidity Sufficient
-          currentState.cashBalance -= interestDue;
-          monthEvents.push({
-            type: 'INTEREST_EXP',
-            amount: -interestDue,
-            description: `Loan Interest Paid by Cash`
-          });
-        } else {
-          // Scenario: Liquidity Crunch
-          const paidByCash = currentState.cashBalance;
-          const shortfall = interestDue - currentState.cashBalance;
+        const interestType = leverage.interestType || 'CAPITALIZED'; // Default to Capitalized (Compound) behavior
 
-          if (paidByCash > 0) {
+        if (interestType === 'MONTHLY') {
+          // --- EXISTING BEHAVIOR: Pay from Cash, Capitalize shortfall ---
+          if (currentState.cashBalance >= interestDue) {
+            // Scenario: Liquidity Sufficient
+            currentState.cashBalance -= interestDue;
             monthEvents.push({
               type: 'INTEREST_EXP',
-              amount: -paidByCash,
-              description: `Loan Interest Paid by Cash (Partial)`
+              amount: -interestDue,
+              description: `Loan Interest Paid by Cash`
+            });
+          } else {
+            // Scenario: Liquidity Crunch
+            const paidByCash = currentState.cashBalance;
+            const shortfall = interestDue - currentState.cashBalance;
+
+            if (paidByCash > 0) {
+              monthEvents.push({
+                type: 'INTEREST_EXP',
+                amount: -paidByCash,
+                description: `Loan Interest Paid by Cash (Partial)`
+              });
+            }
+
+            currentState.cashBalance = 0;
+            currentState.debtBalance += shortfall;
+            monthEvents.push({
+              type: 'DEBT_INC',
+              amount: shortfall,
+              description: `Unpaid Interest Capitalized to Debt`
             });
           }
 
-          currentState.cashBalance = 0;
-          currentState.debtBalance += shortfall;
-          monthEvents.push({
-            type: 'DEBT_INC',
-            amount: shortfall,
-            description: `Unpaid Interest Capitalized to Debt`
-          });
+        } else if (interestType === 'MATURITY') {
+            // --- NEW: Simple Interest, Accrue Separately ---
+            currentState.accruedInterest += interestDue;
+            monthEvents.push({
+                type: 'INTEREST_EXP',
+                amount: 0, // No cash flow
+                description: `Interest Accrued (Not Paid)`
+            });
+
+        } else if (interestType === 'CAPITALIZED') {
+            // --- NEW: Compound Interest, Add to Principal ---
+            currentState.debtBalance += interestDue;
+            monthEvents.push({
+                type: 'DEBT_INC',
+                amount: interestDue,
+                description: `Interest Capitalized to Debt (Compound)`
+            });
         }
       }
     }
@@ -215,9 +240,10 @@ export const runBacktest = (
 
       // Solvency Check
       if (effectiveCollateral > 0) {
-        currentState.ltv = (currentState.debtBalance / effectiveCollateral) * 100;
+        const totalLiability = currentState.debtBalance + currentState.accruedInterest;
+        currentState.ltv = (totalLiability / effectiveCollateral) * 100;
       } else {
-        currentState.ltv = currentState.debtBalance > 0 ? 9999 : 0;
+        currentState.ltv = (currentState.debtBalance + currentState.accruedInterest) > 0 ? 9999 : 0;
       }
 
       // Trigger Bankruptcy if Debt exceeds the safety limit (maxLtv) of the Collateral
@@ -240,7 +266,8 @@ export const runBacktest = (
       const cashVal = currentState.cashBalance;
 
       const assets = qqqVal + qldVal + cashVal;
-      currentState.totalValue = Math.max(0, assets - currentState.debtBalance);
+      // Net Equity = Assets - Principal Debt - Accrued Simple Interest
+      currentState.totalValue = Math.max(0, assets - currentState.debtBalance - currentState.accruedInterest);
 
       // Calculate Beta
       // Beta Reference: QQQ=1, Cash=0, QLD=2.

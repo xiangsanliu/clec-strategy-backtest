@@ -45,7 +45,8 @@ const DEFAULT_ASSET_CONFIG: AssetConfig = {
     maxLtv: 100.0,
     withdrawType: 'PERCENT',
     withdrawValue: 2.0,
-    inflationRate: 0.0 // Default 0%
+    inflationRate: 0.0, // Default 0%
+    interestType: 'CAPITALIZED' // Default to Capitalized
   }
 };
 
@@ -470,7 +471,7 @@ export const ConfigPanel: React.FC<ConfigPanelProps> = ({ profiles, onProfilesCh
                       step="0.05"
                       min="0" max="1"
                       value={profile.config.leverage.qqqPledgeRatio ?? 0.7}
-                      onChange={(e) => updateLeverage(profile.id, { qqqPledgeRatio: Number(e.target.value) })}
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => updateLeverage(profile.id, { qqqPledgeRatio: Number(e.target.value) })}
                       className="w-full px-2 py-1.5 border border-yellow-200 rounded outline-none text-sm"
                     />
                   </div>
@@ -481,7 +482,7 @@ export const ConfigPanel: React.FC<ConfigPanelProps> = ({ profiles, onProfilesCh
                       step="0.01"
                       min="0" max="1"
                       value={profile.config.leverage.cashPledgeRatio ?? 0.95}
-                      onChange={(e) => updateLeverage(profile.id, { cashPledgeRatio: Number(e.target.value) })}
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => updateLeverage(profile.id, { cashPledgeRatio: Number(e.target.value) })}
                       className="w-full px-2 py-1.5 border border-yellow-200 rounded outline-none text-sm"
                     />
                   </div>
@@ -492,10 +493,24 @@ export const ConfigPanel: React.FC<ConfigPanelProps> = ({ profiles, onProfilesCh
                       step="0.05"
                       min="0" max="1"
                       value={profile.config.leverage.qldPledgeRatio ?? 0.0}
-                      onChange={(e) => updateLeverage(profile.id, { qldPledgeRatio: Number(e.target.value) })}
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => updateLeverage(profile.id, { qldPledgeRatio: Number(e.target.value) })}
                       className="w-full px-2 py-1.5 border border-yellow-200 rounded outline-none text-sm text-yellow-900 bg-white focus:bg-white"
                     />
                   </div>
+                </div>
+
+                {/* Row 2.5: Interest Payment Type */}
+                <div>
+                  <label className="text-[10px] text-yellow-700 uppercase font-bold mb-1 block">{t('interestType')}</label>
+                  <select
+                    value={profile.config.leverage.interestType || 'CAPITALIZED'}
+                    onChange={(e: React.ChangeEvent<HTMLSelectElement>) => updateLeverage(profile.id, { interestType: e.target.value as any })}
+                    className="w-full bg-white border border-yellow-200 rounded-lg px-2 py-2 text-sm outline-none"
+                  >
+                    <option value="MONTHLY">{t('interestMonthly')}</option>
+                    <option value="MATURITY">{t('interestMaturity')}</option>
+                    <option value="CAPITALIZED">{t('interestCapitalized')}</option>
+                  </select>
                 </div>
 
                 {/* Row 3: Withdrawal Settings */}
@@ -504,7 +519,7 @@ export const ConfigPanel: React.FC<ConfigPanelProps> = ({ profiles, onProfilesCh
                   <div className="flex gap-2">
                     <select
                       value={profile.config.leverage.withdrawType}
-                      onChange={(e) => updateLeverage(profile.id, { withdrawType: e.target.value as any })}
+                      onChange={(e: React.ChangeEvent<HTMLSelectElement>) => updateLeverage(profile.id, { withdrawType: e.target.value as any })}
                       className="bg-white border border-yellow-200 rounded-lg px-2 text-sm outline-none w-28"
                     >
                       <option value="PERCENT">{t('percentOfQqq')}</option>
