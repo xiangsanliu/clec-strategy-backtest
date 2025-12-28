@@ -2,6 +2,7 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import html2canvas from 'html2canvas';
 import { SimulationResult } from '../types';
+import { zpixFont } from './fontData';
 
 // Extend jsPDF type for autotable
 declare module 'jspdf' {
@@ -14,6 +15,12 @@ export const generateProfessionalReport = async (
     results: SimulationResult[]
 ) => {
     const doc = new jsPDF('p', 'mm', 'a4');
+    
+    // Add custom font for Chinese support
+    doc.addFileToVFS('zpix.ttf', zpixFont);
+    doc.addFont('zpix.ttf', 'zpix', 'normal');
+    const defaultFont = 'zpix';
+
     const pageWidth = doc.internal.pageSize.getWidth();
     const pageHeight = doc.internal.pageSize.getHeight();
     const margin = 15;
@@ -30,11 +37,11 @@ export const generateProfessionalReport = async (
 
     doc.setTextColor(255, 255, 255);
     doc.setFontSize(22);
-    doc.setFont('helvetica', 'bold');
+    doc.setFont(defaultFont, 'bold');
     doc.text('Strategy Performance Report', margin, 18);
 
     doc.setFontSize(10);
-    doc.setFont('helvetica', 'normal');
+    doc.setFont(defaultFont, 'normal');
     doc.text(`Generated: ${new Date().toLocaleDateString()} | CLEC Strategy Backtester`, margin, 28);
 
     yPos = 45;
@@ -42,7 +49,7 @@ export const generateProfessionalReport = async (
     // === EXECUTIVE SUMMARY ===
     doc.setTextColor(...textColor);
     doc.setFontSize(14);
-    doc.setFont('helvetica', 'bold');
+    doc.setFont(defaultFont, 'bold');
     doc.text('Executive Summary', margin, yPos);
     yPos += 8;
 
@@ -52,7 +59,7 @@ export const generateProfessionalReport = async (
     const lowestDrawdown = [...results].sort((a, b) => a.metrics.maxDrawdown - b.metrics.maxDrawdown)[0];
 
     doc.setFontSize(10);
-    doc.setFont('helvetica', 'normal');
+    doc.setFont(defaultFont, 'normal');
     doc.setTextColor(...mutedColor);
 
     const summaryText = [
@@ -70,7 +77,7 @@ export const generateProfessionalReport = async (
     // === PERFORMANCE METRICS TABLE ===
     doc.setTextColor(...textColor);
     doc.setFontSize(14);
-    doc.setFont('helvetica', 'bold');
+    doc.setFont(defaultFont, 'bold');
     doc.text('Performance Metrics', margin, yPos);
     yPos += 5;
 
@@ -105,11 +112,13 @@ export const generateProfessionalReport = async (
             fillColor: primaryColor,
             textColor: [255, 255, 255],
             fontStyle: 'bold',
-            fontSize: 8
+            fontSize: 8,
+            font: defaultFont
         },
         bodyStyles: {
             fontSize: 8,
-            textColor: textColor
+            textColor: textColor,
+            font: defaultFont
         },
         alternateRowStyles: {
             fillColor: [248, 250, 252]
@@ -155,7 +164,7 @@ export const generateProfessionalReport = async (
             // Chart title
             doc.setTextColor(...textColor);
             doc.setFontSize(12);
-            doc.setFont('helvetica', 'bold');
+            doc.setFont(defaultFont, 'bold');
             doc.text(title, margin, yPos);
             yPos += 5;
 
@@ -181,7 +190,7 @@ export const generateProfessionalReport = async (
 
     doc.setTextColor(...textColor);
     doc.setFontSize(14);
-    doc.setFont('helvetica', 'bold');
+    doc.setFont(defaultFont, 'bold');
     doc.text('AI Analysis Data', margin, 15);
 
     doc.setFontSize(8);
@@ -210,7 +219,7 @@ export const generateProfessionalReport = async (
     }));
 
     doc.setFontSize(7);
-    doc.setFont('courier', 'normal');
+    doc.setFont(defaultFont, 'normal');
     doc.setTextColor(71, 85, 105);
 
     const jsonStr = JSON.stringify(aiData, null, 2);
@@ -228,7 +237,7 @@ export const generateProfessionalReport = async (
     // === FOOTER (on last page) ===
     doc.setFontSize(7);
     doc.setTextColor(...mutedColor);
-    doc.setFont('helvetica', 'italic');
+    doc.setFont(defaultFont, 'italic');
     doc.text(
         'This report is for informational purposes only and does not constitute financial advice.',
         pageWidth / 2,
