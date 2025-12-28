@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { runBacktest } from '../simulationEngine';
 import { MARKET_DATA } from '../../constants';
 import { getStrategyByType } from '../strategies';
-import { AssetConfig, Profile } from '../../types';
+import { Profile } from '../../types';
 
 const SOLVENCY_PROFILES: Profile[] = [
   {
