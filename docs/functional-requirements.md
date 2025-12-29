@@ -33,12 +33,40 @@ Each monthly iteration follows a strict sequence:
 - **Ulcer Index**: $\text{UI} = \sqrt{\frac{\sum D_i^2}{N}}$ (Quadratic mean of percentage drawdowns $D_i$).
 - **Portfolio Beta**: $\beta_p = \frac{(Val_{qqq} \cdot 1) + (Val_{qld} \cdot 2)}{E}$ (Reflects effective leverage relative to QQQ).
 
-#### Banking & Debt
+#### Banking & Debt (Interest Accrual)
 
-- **Cash Yield**: $C_{t+1} = C_t \cdot (1 + r_{yield})^{1/12}$
-- **LTV Calculation**: $\text{LTV} = \frac{Debt + AccruedInterest}{Basis}$
-  - _Total Assets Basis_: $Basis = V_{assets}$
-  - _Collateral Basis_: $Basis = \sum (Asset_i \cdot PledgeRatio_i)$
+Monthly interest rate: $r_m = (1 + r_{annual})^{1/12} - 1$
+Interest due for month $t$: $I_t = Debt_t \times r_m$
+
+The system supports three interest servicing modes:
+
+1.  **Capitalized (Compound Interest)**:
+    Monthly interest is added to the principal balance, resulting in compounding.
+
+    - $Debt_{t+1} = Debt_t + I_t$
+    - $AccruedInterest_{t+1} = AccruedInterest_t$
+    - $Cash_{t+1} = Cash_t$
+
+2.  **Monthly (Cash Payment)**:
+    Interest is paid from available cash. If cash is insufficient, the shortfall is capitalized.
+
+    - $Paid\_by\_Cash_t = \min(Cash_t, I_t)$
+    - $Shortfall_t = I_t - Paid\_by\_Cash_t$
+    - $Cash_{t+1} = Cash_t - Paid\_by\_Cash_t$
+    - $Debt_{t+1} = Debt_t + Shortfall_t$
+
+3.  **Maturity (Simple Interest Accrual)**:
+    Interest is tracked in a separate accrued balance. It does not compound (the principal remains unchanged unless modified by other actions).
+    - $AccruedInterest_{t+1} = AccruedInterest_t + I_t$
+    - $Debt_{t+1} = Debt_t$
+    - $Cash_{t+1} = Cash_t$
+
+#### LTV Calculation
+
+$\text{LTV} = \frac{Debt_t + AccruedInterest_t}{Basis_t}$
+
+- _Total Assets Basis_: $Basis = V_{assets}$
+- _Collateral Basis_: $Basis = \sum (Asset_i \cdot PledgeRatio_i)$
 
 ---
 
