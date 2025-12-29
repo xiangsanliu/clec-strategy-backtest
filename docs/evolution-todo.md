@@ -6,7 +6,7 @@
 
 - [x] **数据导入导出**: 在网页端支持用户所有资产配置方案 (Profiles) 的 JSON 导入与导出。
 - [x] **集成 Vitest**: 为 `services/` 下的回测算法建立高覆盖率的单元测试。
-- [ ] **E2E 测试集成**: 引入 Playwright 或 Cypress 模拟用户操作，验证图表渲染和计算流。
+- [x] **E2E 测试集成**: 引入 Playwright 或 Cypress 模拟用户操作，验证图表渲染和计算流。
 - [ ] **代码规范强制**: 在 Docker 构建流中引入 `ESLint` 和 `Prettier` 检查。
 - [ ] **环境变量管理**: 区分 `development`, `staging`, `production` 环境变量。
 
