@@ -1,0 +1,22 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "5173:80"
+    environment:
+      - NODE_ENV=development
+
+  e2e:
+    image: mcr.microsoft.com/playwright:v1.42.1-focal
+    working_dir: /app
+    volumes:
+      - .:/app
+      - ./playwright-report:/app/playwright-report
+    environment:
+      - CI=true
+    depends_on:
+      - app
+    command: >
+      sh -c "npm install && npx playwright test"
