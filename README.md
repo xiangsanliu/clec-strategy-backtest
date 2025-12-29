@@ -24,25 +24,29 @@
 ## ✨ Key Features
 
 ### 🛠 Powerful Simulation Engine
+
 - **Multi-Asset Allocation**: Mix and match QQQ (Nasdaq-100) and QLD (2x Leveraged Nasdaq-100).
-- **Advanced Leverage Modeling**: 
+- **Advanced Leverage Modeling**:
   - Interactive LTV (Loan-to-Value) tracking.
   - Automatic margin call/liquidation triggers when safety limits are breached.
   - Capitalized interest for unpaid loan balances.
 - **Dynamic Cash Management**: Supports interest-bearing cash reserves and flexible contribution intervals.
 
 ### 🧠 Investment Strategies
+
 - **Lump Sum + Annual Top-up**: Strategic entry with periodic capital injections.
 - **Standard DCA**: Classic Dollar Cost Averaging with configurable intervals.
 - **Yearly Rebalancing**: Automated maintenance of target asset allocations.
 - **Smart Adjust**: A proprietary algorithm that harvests profits in bull markets and "buys the dip" during corrections using cash reserves.
 
 ### 📊 Professional Analytics & Reporting
+
 - **In-depth Metrics**: CAGR, IRR, Sharpe Ratio, Ulcer Index (Pain Index), Max Drawdown, and Calmar Ratio.
 - **AI-Readable PDF Reports**: Generate comprehensive PDF summaries with charts and tables optimized for both humans and AI analysis.
 - **Real-time Visualization**: Interactive charts powered by Recharts for equity curves and risk metrics.
 
 ### 🌐 Global & Versatile
+
 - **i18n Ready**: Fully localized interface support.
 - **Cross-Platform**: Built with Capacitor for seamless transition to mobile platforms (Android/iOS).
 
@@ -63,10 +67,12 @@
 ## 💻 Getting Started
 
 ### Prerequisites
+
 - Node.js (Latest LTS recommended)
 - Docker (Optional, for containerized deployment)
 
 ### Local Development
+
 1. **Clone & Install**:
    ```bash
    npm install
@@ -79,11 +85,13 @@
    ```
 
 ### Docker Deployment
+
 ```bash
 docker-compose up -d
 ```
 
 ### Mobile Sync (Capacitor)
+
 ```bash
 npm run mobile:sync
 ```

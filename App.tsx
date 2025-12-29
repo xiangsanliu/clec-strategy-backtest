@@ -1,14 +1,13 @@
-
-import { useState, useEffect, useCallback } from 'react';
-import { ConfigPanel } from './components/ConfigPanel';
-import { ResultsDashboard } from './components/ResultsDashboard';
-import { FinancialReportModal } from './components/FinancialReportModal';
-import { MARKET_DATA } from './constants';
-import { runBacktest } from './services/simulationEngine';
-import { getStrategyByType } from './services/strategies';
-import { AssetConfig, Profile, SimulationResult } from './types';
-import { LayoutDashboard, Settings2, X, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
-import { LanguageProvider, useTranslation, Language } from './services/i18n';
+import { useState, useEffect, useCallback } from 'react'
+import { ConfigPanel } from './components/ConfigPanel'
+import { ResultsDashboard } from './components/ResultsDashboard'
+import { FinancialReportModal } from './components/FinancialReportModal'
+import { MARKET_DATA } from './constants'
+import { runBacktest } from './services/simulationEngine'
+import { getStrategyByType } from './services/strategies'
+import { AssetConfig, Profile, SimulationResult } from './types'
+import { LayoutDashboard, Settings2, X, PanelLeftClose, PanelLeftOpen } from 'lucide-react'
+import { LanguageProvider, useTranslation, Language } from './services/i18n'
 
 const DEFAULT_CONFIG_A: AssetConfig = {
   initialCapital: 10000,
@@ -32,11 +31,11 @@ const DEFAULT_CONFIG_A: AssetConfig = {
     withdrawValue: 2.0,
     inflationRate: 0.0,
     interestType: 'CAPITALIZED',
-    ltvBasis: 'TOTAL_ASSETS'
+    ltvBasis: 'TOTAL_ASSETS',
   },
   annualExpenseAmount: 200,
-  cashCoverageYears: 15
-};
+  cashCoverageYears: 15,
+}
 
 const DEFAULT_CONFIG_B: AssetConfig = {
   initialCapital: 10000,
@@ -60,11 +59,11 @@ const DEFAULT_CONFIG_B: AssetConfig = {
     withdrawValue: 2.0,
     inflationRate: 0.0,
     interestType: 'CAPITALIZED',
-    ltvBasis: 'TOTAL_ASSETS'
+    ltvBasis: 'TOTAL_ASSETS',
   },
   annualExpenseAmount: 200,
-  cashCoverageYears: 15
-};
+  cashCoverageYears: 15,
+}
 
 const INITIAL_PROFILES: Profile[] = [
   {
@@ -72,90 +71,80 @@ const INITIAL_PROFILES: Profile[] = [
     name: 'Conservative',
     color: '#2563eb', // Blue
     strategyType: 'NO_REBALANCE',
-    config: DEFAULT_CONFIG_A
+    config: DEFAULT_CONFIG_A,
   },
   {
     id: '2',
     name: 'Aggressive',
     color: '#ea580c', // Orange (High contrast)
     strategyType: 'SMART',
-    config: DEFAULT_CONFIG_B
-  }
-];
+    config: DEFAULT_CONFIG_B,
+  },
+]
 
 const MainApp = () => {
-  const { t, language, setLanguage } = useTranslation();
-  const [profiles, setProfiles] = useState<Profile[]>(INITIAL_PROFILES);
-  const [results, setResults] = useState<SimulationResult[]>([]);
-  const [isCalculated, setIsCalculated] = useState(false);
+  const { t, language, setLanguage } = useTranslation()
+  const [profiles, setProfiles] = useState<Profile[]>(INITIAL_PROFILES)
+  const [results, setResults] = useState<SimulationResult[]>([])
+  const [isCalculated, setIsCalculated] = useState(false)
 
   // Reporting Modal State
-  const [reportResult, setReportResult] = useState<SimulationResult | null>(null);
+  const [reportResult, setReportResult] = useState<SimulationResult | null>(null)
 
   // Sidebar state
-  const [isSidebarOpen, setSidebarOpen] = useState(true);
+  const [isSidebarOpen, setSidebarOpen] = useState(true)
 
   // Auto-collapse on small screens initially
   useEffect(() => {
     if (window.innerWidth < 1024) {
-      setSidebarOpen(false);
+      setSidebarOpen(false)
     }
-  }, []);
+  }, [])
 
   const handleRunSimulation = useCallback(() => {
-    const newResults = profiles.map(profile => {
-      const strategyFunc = getStrategyByType(profile.strategyType);
-      return runBacktest(
-        MARKET_DATA,
-        strategyFunc,
-        profile.config,
-        profile.name,
-        profile.color
-      );
-    });
+    const newResults = profiles.map((profile) => {
+      const strategyFunc = getStrategyByType(profile.strategyType)
+      return runBacktest(MARKET_DATA, strategyFunc, profile.config, profile.name, profile.color)
+    })
 
-    setResults(newResults);
-    setIsCalculated(true);
+    setResults(newResults)
+    setIsCalculated(true)
 
     // Auto close on mobile only
     if (window.innerWidth < 1024) {
-      setSidebarOpen(false);
+      setSidebarOpen(false)
     }
-  }, [profiles]);
+  }, [profiles])
 
   useEffect(() => {
-    handleRunSimulation();
+    handleRunSimulation()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [])
 
   const handleViewDetails = (profileId: string) => {
-    if (!isCalculated) return;
+    if (!isCalculated) return
     // We need to map the profile ID to the result index.
     // Since results map 1:1 to profiles array order:
-    const index = profiles.findIndex(p => p.id === profileId);
+    const index = profiles.findIndex((p) => p.id === profileId)
     if (index >= 0 && results[index]) {
-      setReportResult(results[index]);
+      setReportResult(results[index])
     }
-  };
+  }
 
-  const LangButton = ({ code, label }: { code: Language, label: string }) => (
+  const LangButton = ({ code, label }: { code: Language; label: string }) => (
     <button
       onClick={() => setLanguage(code)}
       className={`text-xs px-2 py-1 rounded transition-colors font-medium ${language === code ? 'bg-blue-600 text-white' : 'text-slate-500 hover:bg-slate-200'}`}
     >
       {label}
     </button>
-  );
+  )
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col lg:flex-row font-sans text-slate-900 relative overflow-x-hidden">
-
       {/* Financial Report Modal */}
       {reportResult && (
-        <FinancialReportModal
-          result={reportResult}
-          onClose={() => setReportResult(null)}
-        />
+        <FinancialReportModal result={reportResult} onClose={() => setReportResult(null)} />
       )}
 
       {/* Mobile/Tablet Portrait Header (< 1024px) */}
@@ -262,9 +251,10 @@ const MainApp = () => {
 
       {/* Main Content Area */}
       <main className="flex-1 min-w-0 p-4 lg:p-8 relative">
-
         {/* Desktop Expand Button (Floating) */}
-        <div className={`fixed top-6 left-6 z-30 transition-opacity duration-300 ${!isSidebarOpen && window.innerWidth >= 1024 ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}>
+        <div
+          className={`fixed top-6 left-6 z-30 transition-opacity duration-300 ${!isSidebarOpen && window.innerWidth >= 1024 ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}
+        >
           <button
             onClick={() => setSidebarOpen(true)}
             className="hidden lg:flex bg-white p-2.5 rounded-lg shadow-lg border border-slate-200 text-slate-600 hover:text-blue-600 hover:border-blue-300 transition-all"
@@ -278,7 +268,9 @@ const MainApp = () => {
           <div className="max-w-7xl mx-auto animate-in fade-in duration-500">
             <div className="mb-6 hidden lg:block">
               <h2 className="text-2xl font-bold text-slate-800">{t('simulationResults')}</h2>
-              <p className="text-slate-500">{t('comparingPerformance')} {results.length} {t('profiles')}.</p>
+              <p className="text-slate-500">
+                {t('comparingPerformance')} {results.length} {t('profiles')}.
+              </p>
             </div>
             <ResultsDashboard results={results} />
           </div>
@@ -288,15 +280,14 @@ const MainApp = () => {
           </div>
         )}
       </main>
-
     </div>
-  );
-};
+  )
+}
 
 export default function App() {
   return (
     <LanguageProvider>
       <MainApp />
     </LanguageProvider>
-  );
+  )
 }

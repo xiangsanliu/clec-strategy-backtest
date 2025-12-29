@@ -1,30 +1,61 @@
-
-import React, { useState } from 'react';
-import { SimulationResult } from '../types';
-import { ComposedChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, Legend, BarChart, Bar } from 'recharts';
-import { TrendingUp, Percent, Activity, Trophy, AlertTriangle, Scale, HelpCircle, Zap, ShieldAlert, Clock, ChevronUp, ChevronDown, ArrowUpDown, FileDown } from 'lucide-react';
-import { useTranslation } from '../services/i18n';
-import { MathModelModal } from './MathModelModal';
-import { generateProfessionalReport } from '../services/reportService';
+import React, { useState } from 'react'
+import { SimulationResult } from '../types'
+import {
+  ComposedChart,
+  Area,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  LineChart,
+  Line,
+  Legend,
+  BarChart,
+  Bar,
+} from 'recharts'
+import {
+  TrendingUp,
+  Percent,
+  Activity,
+  Trophy,
+  AlertTriangle,
+  Scale,
+  HelpCircle,
+  Zap,
+  ShieldAlert,
+  Clock,
+  ChevronUp,
+  ChevronDown,
+  ArrowUpDown,
+  FileDown,
+} from 'lucide-react'
+import { useTranslation } from '../services/i18n'
+import { MathModelModal } from './MathModelModal'
+import { generateProfessionalReport } from '../services/reportService'
 
 interface ResultsDashboardProps {
-  results: SimulationResult[];
+  results: SimulationResult[]
 }
 
 const MetricCard: React.FC<{
-  title: string;
-  value: string;
-  subValue?: string;
-  icon: React.ReactNode;
-  winnerName: string;
-  winnerColor: string;
+  title: string
+  value: string
+  subValue?: string
+  icon: React.ReactNode
+  winnerName: string
+  winnerColor: string
   highlight?: boolean
 }> = ({ title, value, subValue, icon, winnerName, winnerColor, highlight }) => (
-  <div className={`p-5 rounded-xl border shadow-sm transition-all hover:shadow-md flex flex-col justify-between ${highlight ? 'bg-blue-50 border-blue-200' : 'bg-white border-slate-100'}`}>
+  <div
+    className={`p-5 rounded-xl border shadow-sm transition-all hover:shadow-md flex flex-col justify-between ${highlight ? 'bg-blue-50 border-blue-200' : 'bg-white border-slate-100'}`}
+  >
     <div>
       <div className="flex justify-between items-start mb-2">
         <div className="text-sm font-medium text-slate-500">{title}</div>
-        <div className={`p-2 rounded-lg ${highlight ? 'bg-blue-100 text-blue-600' : 'bg-slate-100 text-slate-600'}`}>
+        <div
+          className={`p-2 rounded-lg ${highlight ? 'bg-blue-100 text-blue-600' : 'bg-slate-100 text-slate-600'}`}
+        >
           {icon}
         </div>
       </div>
@@ -32,178 +63,222 @@ const MetricCard: React.FC<{
       {subValue && <div className="text-xs text-slate-400 mb-2">{subValue}</div>}
     </div>
 
-    <div className={`flex items-center gap-2 text-xs font-medium p-2 rounded-lg border ${highlight ? 'bg-white/60 border-blue-100' : 'bg-slate-50 border-slate-100'}`}>
+    <div
+      className={`flex items-center gap-2 text-xs font-medium p-2 rounded-lg border ${highlight ? 'bg-white/60 border-blue-100' : 'bg-slate-50 border-slate-100'}`}
+    >
       <Trophy className="w-3 h-3 text-yellow-500" />
-      <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: winnerColor }}></span>
-      <span className="text-slate-700 truncate" title={winnerName}>{winnerName}</span>
+      <span
+        className="w-2 h-2 rounded-full flex-shrink-0"
+        style={{ backgroundColor: winnerColor }}
+      ></span>
+      <span className="text-slate-700 truncate" title={winnerName}>
+        {winnerName}
+      </span>
     </div>
   </div>
-);
+)
 
-const CustomTooltip = ({ active, payload, label }: any) => {
+const CustomTooltip = ({
+  active,
+  payload,
+  label,
+}: {
+  active?: boolean
+  payload?: unknown[]
+  label?: string
+}) => {
   if (active && payload && payload.length) {
     return (
       <div className="bg-white p-3 border border-slate-200 shadow-lg rounded-lg text-xs">
         <p className="font-bold text-slate-700 mb-2">{label}</p>
-        {payload.map((p: any) => (
+        {(payload as { name: string; value: number; color: string }[]).map((p) => (
           <div key={p.name} className="flex items-center gap-2 mb-1" style={{ color: p.color }}>
             <span className="w-2 h-2 rounded-full" style={{ backgroundColor: p.color }}></span>
             <span>{p.name}:</span>
             <span className="font-mono font-bold">
-              {typeof p.value === 'number' && (p.name.includes('%') || p.name.includes('LTV') || p.name.includes('Beta'))
+              {typeof p.value === 'number' &&
+              (p.name.includes('%') || p.name.includes('LTV') || p.name.includes('Beta'))
                 ? `${Number(p.value).toFixed(2)}${p.name.includes('Beta') ? '' : '%'}`
                 : `$${Number(p.value).toLocaleString(undefined, { maximumFractionDigits: 0 })}`}
             </span>
           </div>
         ))}
       </div>
-    );
+    )
   }
-  return null;
-};
+  return null
+}
 
 export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({ results }) => {
-  const { t } = useTranslation();
-  const [showMath, setShowMath] = useState(false);
-  const [isGeneratingReport, setIsGeneratingReport] = useState(false);
-  const [sortConfig, setSortConfig] = useState<{ key: keyof SimulationResult['metrics'] | 'strategyName', direction: 'asc' | 'desc' } | null>(null);
+  const { t } = useTranslation()
+  const [showMath, setShowMath] = useState(false)
+  const [isGeneratingReport, setIsGeneratingReport] = useState(false)
+  const [sortConfig, setSortConfig] = useState<{
+    key: keyof SimulationResult['metrics'] | 'strategyName'
+    direction: 'asc' | 'desc'
+  } | null>(null)
 
   const handleSort = (key: keyof SimulationResult['metrics'] | 'strategyName') => {
-    let direction: 'asc' | 'desc' = 'desc';
+    let direction: 'asc' | 'desc' = 'desc'
     if (sortConfig && sortConfig.key === key && sortConfig.direction === 'desc') {
-      direction = 'asc';
+      direction = 'asc'
     }
-    setSortConfig({ key, direction });
-  };
+    setSortConfig({ key, direction })
+  }
 
-  if (results.length === 0) return null;
+  // Move early return after hooks if possible, but sortedResults is a hook.
+  // Best to return early with the same hook structure or just return the UI conditionally.
 
   // Filter out bankrupt strategies for "Winning" logic to avoid skewing unless all are bankrupt
-  const activeResults = results.filter(r => !r.isBankrupt);
-  const safeResults = activeResults.length > 0 ? activeResults : results;
-
-
+  const activeResults = results.filter((r) => !r.isBankrupt)
+  const safeResults = activeResults.length > 0 ? activeResults : results
 
   // Prepare Chart Data (Growth)
   const chartData = results[0].history.map((_, idx) => {
-    const row: any = { date: results[0].history[idx].date };
-    results.forEach(res => {
+    const row: Record<string, string | number> = { date: results[0].history[idx].date }
+    results.forEach((res) => {
       // If history stops early (due to bankruptcy optimization), use 0 or last val
-      const val = res.history[idx]?.totalValue ?? 0;
-      row[res.strategyName] = val;
-    });
-    return row;
-  });
+      const val = res.history[idx]?.totalValue ?? 0
+      row[res.strategyName] = val
+    })
+    return row
+  })
 
   // Prepare Drawdown Data
-  const drawdownData = results[0].history.map((h) => ({ date: h.date }));
-  results.forEach(res => {
-    let peak = -Infinity;
+  const drawdownData = results[0].history.map((h) => ({ date: h.date }))
+  results.forEach((res) => {
+    let peak = -Infinity
     res.history.forEach((h, idx) => {
-      if (h.totalValue > peak) peak = h.totalValue;
-      const dd = peak === 0 ? 0 : ((h.totalValue - peak) / peak) * 100;
-      (drawdownData[idx] as any)[res.strategyName] = dd;
-    });
-  });
+      if (h.totalValue > peak) peak = h.totalValue
+      const dd = peak === 0 ? 0 : ((h.totalValue - peak) / peak) * 100
+      ;(drawdownData[idx] as Record<string, string | number>)[res.strategyName] = dd
+    })
+  })
 
   // Prepare LTV Data (Only for leveraged profiles)
-  const leveragedProfiles = results.filter(r => r.isLeveraged);
-  let ltvData: any[] = [];
+  const leveragedProfiles = results.filter((r) => r.isLeveraged)
+  let ltvData: Record<string, string | number>[] = []
   if (leveragedProfiles.length > 0) {
-    ltvData = results[0].history.map((h) => ({ date: h.date }));
-    leveragedProfiles.forEach(res => {
+    ltvData = results[0].history.map((h) => ({ date: h.date }))
+    leveragedProfiles.forEach((res) => {
       res.history.forEach((h, idx) => {
-        (ltvData[idx] as any)[res.strategyName] = h.ltv;
-      });
-    });
+        ;(ltvData[idx] as Record<string, string | number>)[res.strategyName] = h.ltv
+      })
+    })
   }
 
   // Prepare Beta Data
-  const betaData = results[0].history.map((h) => ({ date: h.date }));
-  results.forEach(res => {
+  const betaData = results[0].history.map((h) => ({ date: h.date }))
+  results.forEach((res) => {
     res.history.forEach((h, idx) => {
-      (betaData[idx] as any)[res.strategyName] = h.beta;
-    });
-  });
+      ;(betaData[idx] as Record<string, string | number>)[res.strategyName] = h.beta
+    })
+  })
 
   // Prepare Cash Data for ALL profiles that have cash usage
-  const cashCharts = results.map(res => {
-    const data = res.history.map(h => ({
-      date: h.date,
-      cashPct: h.totalValue > 0 ? (h.cashBalance / h.totalValue) * 100 : 0,
-      equityPct: h.totalValue > 0 ? 100 - ((h.cashBalance / h.totalValue) * 100) : 0,
-      cashAmount: h.cashBalance
-    }));
-    // Only show if there is ever significant cash (>0.5%)
-    const maxCash = Math.max(...data.map(d => d.cashPct));
-    return { res, data, hasCash: maxCash > 0.5 };
-  }).filter(item => item.hasCash);
+  const cashCharts = results
+    .map((res) => {
+      const data = res.history.map((h) => ({
+        date: h.date,
+        cashPct: h.totalValue > 0 ? (h.cashBalance / h.totalValue) * 100 : 0,
+        equityPct: h.totalValue > 0 ? 100 - (h.cashBalance / h.totalValue) * 100 : 0,
+        cashAmount: h.cashBalance,
+      }))
+      // Only show if there is ever significant cash (>0.5%)
+      const maxCash = Math.max(...data.map((d) => d.cashPct))
+      return { res, data, hasCash: maxCash > 0.5 }
+    })
+    .filter((item) => item.hasCash)
 
   // Calculate winners for each primary metric (using safeResults to prefer non-bankrupt)
-  const bestBalance = [...safeResults].sort((a, b) => b.metrics.finalBalance - a.metrics.finalBalance)[0];
-  const bestCAGR = [...safeResults].sort((a, b) => b.metrics.cagr - a.metrics.cagr)[0];
-  const bestIRR = [...safeResults].sort((a, b) => b.metrics.irr - a.metrics.irr)[0];
-  const bestDrawdown = [...safeResults].sort((a, b) => a.metrics.maxDrawdown - b.metrics.maxDrawdown)[0]; // Lowest is best
-  const bestSharpe = [...safeResults].sort((a, b) => b.metrics.sharpeRatio - a.metrics.sharpeRatio)[0];
-  const bestRecoveryMonths = [...safeResults].sort((a, b) => a.metrics.maxRecoveryMonths - b.metrics.maxRecoveryMonths)[0]; // Lowest is best
-  const bestPainIndex = [...safeResults].sort((a, b) => a.metrics.painIndex - b.metrics.painIndex)[0]; // Lowest is best
-  const bestCalmar = [...safeResults].sort((a, b) => b.metrics.calmarRatio - a.metrics.calmarRatio)[0];
+  const bestBalance = [...safeResults].sort(
+    (a, b) => b.metrics.finalBalance - a.metrics.finalBalance,
+  )[0]
+  const bestCAGR = [...safeResults].sort((a, b) => b.metrics.cagr - a.metrics.cagr)[0]
+  const bestIRR = [...safeResults].sort((a, b) => b.metrics.irr - a.metrics.irr)[0]
+  const bestDrawdown = [...safeResults].sort(
+    (a, b) => a.metrics.maxDrawdown - b.metrics.maxDrawdown,
+  )[0] // Lowest is best
+  const bestSharpe = [...safeResults].sort(
+    (a, b) => b.metrics.sharpeRatio - a.metrics.sharpeRatio,
+  )[0]
+  const bestRecoveryMonths = [...safeResults].sort(
+    (a, b) => a.metrics.maxRecoveryMonths - b.metrics.maxRecoveryMonths,
+  )[0] // Lowest is best
+  const bestPainIndex = [...safeResults].sort(
+    (a, b) => a.metrics.painIndex - b.metrics.painIndex,
+  )[0] // Lowest is best
+  const bestCalmar = [...safeResults].sort(
+    (a, b) => b.metrics.calmarRatio - a.metrics.calmarRatio,
+  )[0]
 
-  const bankruptStrategies = results.filter(r => r.isBankrupt);
+  const bankruptStrategies = results.filter((r) => r.isBankrupt)
 
   const sortedResults = React.useMemo(() => {
-    if (!sortConfig) return results;
+    if (!sortConfig) return results
     return [...results].sort((a, b) => {
-      let aVal: any;
-      let bVal: any;
+      let aVal: string | number
+      let bVal: string | number
 
       if (sortConfig.key === 'strategyName') {
-        aVal = a.strategyName;
-        bVal = b.strategyName;
+        aVal = a.strategyName
+        bVal = b.strategyName
       } else {
-        aVal = a.metrics[sortConfig.key];
-        bVal = b.metrics[sortConfig.key];
+        aVal = a.metrics[sortConfig.key]
+        bVal = b.metrics[sortConfig.key]
       }
 
-      if (aVal < bVal) return sortConfig.direction === 'asc' ? -1 : 1;
-      if (aVal > bVal) return sortConfig.direction === 'asc' ? 1 : -1;
-      return 0;
-    });
-  }, [results, sortConfig]);
+      if (aVal < bVal) return sortConfig.direction === 'asc' ? -1 : 1
+      if (aVal > bVal) return sortConfig.direction === 'asc' ? 1 : -1
+      return 0
+    })
+  }, [results, sortConfig])
+
+  if (results.length === 0) return null
 
   const handleDownloadReport = async () => {
-    setIsGeneratingReport(true);
+    setIsGeneratingReport(true)
     try {
-      await generateProfessionalReport(results);
+      await generateProfessionalReport(results)
     } catch (err) {
-      console.error(err);
+      console.error(err)
     } finally {
-      setIsGeneratingReport(false);
+      setIsGeneratingReport(false)
     }
-  };
+  }
 
   const SortIcon = ({ column }: { column: keyof SimulationResult['metrics'] | 'strategyName' }) => {
-    if (!sortConfig || sortConfig.key !== column) return <ArrowUpDown className="w-3 h-3 ml-1 opacity-20 group-hover:opacity-100 transition-opacity" />;
-    return sortConfig.direction === 'asc' ? <ChevronUp className="w-3 h-3 ml-1 text-blue-600" /> : <ChevronDown className="w-3 h-3 ml-1 text-blue-600" />;
-  };
+    if (!sortConfig || sortConfig.key !== column)
+      return (
+        <ArrowUpDown className="w-3 h-3 ml-1 opacity-20 group-hover:opacity-100 transition-opacity" />
+      )
+    return sortConfig.direction === 'asc' ? (
+      <ChevronUp className="w-3 h-3 ml-1 text-blue-600" />
+    ) : (
+      <ChevronDown className="w-3 h-3 ml-1 text-blue-600" />
+    )
+  }
 
   return (
     <div className="space-y-8">
       {showMath && <MathModelModal onClose={() => setShowMath(false)} />}
-
 
       {bankruptStrategies.length > 0 && (
         <div className="bg-red-50 border border-red-200 p-4 rounded-xl flex items-start gap-3 animate-in fade-in slide-in-from-top-2">
           <AlertTriangle className="text-red-600 w-6 h-6 flex-shrink-0 mt-0.5" />
           <div>
             <h3 className="text-red-800 font-bold text-sm">{t('bankruptcyAlert')}</h3>
-            <p className="text-red-700 text-xs mt-1">
-              {t('bankruptcyDesc')}
-            </p>
+            <p className="text-red-700 text-xs mt-1">{t('bankruptcyDesc')}</p>
             <div className="flex flex-wrap gap-2 mt-2">
-              {bankruptStrategies.map(s => (
-                <span key={s.strategyName} className="inline-flex items-center gap-1 bg-white border border-red-200 text-red-700 px-2 py-1 rounded text-xs font-bold">
-                  <span className="w-2 h-2 rounded-full" style={{ backgroundColor: s.color }}></span>
+              {bankruptStrategies.map((s) => (
+                <span
+                  key={s.strategyName}
+                  className="inline-flex items-center gap-1 bg-white border border-red-200 text-red-700 px-2 py-1 rounded text-xs font-bold"
+                >
+                  <span
+                    className="w-2 h-2 rounded-full"
+                    style={{ backgroundColor: s.color }}
+                  ></span>
                   {s.strategyName} ({s.bankruptcyDate})
                 </span>
               ))}
@@ -213,14 +288,26 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({ results }) =
       )}
 
       {/* Main Chart */}
-      <div id="portfolio-growth-chart" className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+      <div
+        id="portfolio-growth-chart"
+        className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm"
+      >
         <h3 className="text-lg font-bold text-slate-800 mb-4">{t('portfolioGrowth')}</h3>
         <div className="h-[400px]">
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={chartData}>
               <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
-              <XAxis dataKey="date" tick={{ fontSize: 12 }} tickFormatter={(val) => val.substring(0, 4)} stroke="#94a3b8" />
-              <YAxis tick={{ fontSize: 12 }} stroke="#94a3b8" tickFormatter={(val) => `$${val / 1000}k`} />
+              <XAxis
+                dataKey="date"
+                tick={{ fontSize: 12 }}
+                tickFormatter={(val) => val.substring(0, 4)}
+                stroke="#94a3b8"
+              />
+              <YAxis
+                tick={{ fontSize: 12 }}
+                stroke="#94a3b8"
+                tickFormatter={(val) => `$${val / 1000}k`}
+              />
               <Tooltip content={<CustomTooltip />} />
               <Legend />
               {results.map((res) => (
@@ -245,20 +332,30 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({ results }) =
           <ResponsiveContainer width="100%" height="100%">
             <BarChart
               data={(() => {
-                const yearMap: { [year: string]: any } = {};
-                results.forEach(res => {
-                  const annuals = res.history.reduce((acc: any, h, idx) => {
-                    const year = h.date.substring(0, 4);
-                    if (!acc[year]) acc[year] = { start: idx > 0 ? res.history[idx - 1].totalValue : h.totalValue, end: h.totalValue };
-                    else acc[year].end = h.totalValue;
-                    return acc;
-                  }, {});
-                  Object.entries(annuals).forEach(([year, val]: [string, any]) => {
-                    if (!yearMap[year]) yearMap[year] = { year };
-                    yearMap[year][res.strategyName] = val.start === 0 ? 0 : ((val.end - val.start) / val.start) * 100;
-                  });
-                });
-                return Object.values(yearMap).sort((a, b) => a.year.localeCompare(b.year));
+                const yearMap: { [year: string]: Record<string, number | string> } = {}
+                results.forEach((res) => {
+                  const annuals = res.history.reduce(
+                    (acc: Record<string, { start: number; end: number }>, h, idx) => {
+                      const year = h.date.substring(0, 4)
+                      if (!acc[year])
+                        acc[year] = {
+                          start: idx > 0 ? res.history[idx - 1].totalValue : h.totalValue,
+                          end: h.totalValue,
+                        }
+                      else acc[year].end = h.totalValue
+                      return acc
+                    },
+                    {},
+                  )
+                  Object.entries(annuals).forEach(([year, val]) => {
+                    if (!yearMap[year]) yearMap[year] = { year }
+                    yearMap[year][res.strategyName] =
+                      val.start === 0 ? 0 : ((val.end - val.start) / val.start) * 100
+                  })
+                })
+                return Object.values(yearMap).sort((a, b) =>
+                  (a.year as string).localeCompare(b.year as string),
+                )
               })()}
             >
               <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
@@ -280,13 +377,21 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({ results }) =
       </div>
 
       {/* Drawdown Chart */}
-      <div id="drawdown-chart" className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+      <div
+        id="drawdown-chart"
+        className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm"
+      >
         <h3 className="text-lg font-bold text-slate-800 mb-4">{t('historicalDrawdown')}</h3>
         <div className="h-[300px]">
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={drawdownData}>
               <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
-              <XAxis dataKey="date" tick={{ fontSize: 12 }} tickFormatter={(val) => val.substring(0, 4)} stroke="#94a3b8" />
+              <XAxis
+                dataKey="date"
+                tick={{ fontSize: 12 }}
+                tickFormatter={(val) => val.substring(0, 4)}
+                stroke="#94a3b8"
+              />
               <YAxis tick={{ fontSize: 12 }} stroke="#94a3b8" unit="%" />
               <Tooltip content={<CustomTooltip />} />
               <Legend />
@@ -318,7 +423,12 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({ results }) =
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={betaData}>
               <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
-              <XAxis dataKey="date" tick={{ fontSize: 12 }} tickFormatter={(val) => val.substring(0, 4)} stroke="#94a3b8" />
+              <XAxis
+                dataKey="date"
+                tick={{ fontSize: 12 }}
+                tickFormatter={(val) => val.substring(0, 4)}
+                stroke="#94a3b8"
+              />
               <YAxis tick={{ fontSize: 12 }} stroke="#94a3b8" domain={[0, 'auto']} />
               <Tooltip content={<CustomTooltip />} />
               <Legend />
@@ -352,8 +462,19 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({ results }) =
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={ltvData}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
-                <XAxis dataKey="date" tick={{ fontSize: 12 }} tickFormatter={(val) => val.substring(0, 4)} stroke="#94a3b8" />
-                <YAxis tick={{ fontSize: 12 }} stroke="#94a3b8" unit="%" domain={[0, 'auto']} allowDataOverflow={false} />
+                <XAxis
+                  dataKey="date"
+                  tick={{ fontSize: 12 }}
+                  tickFormatter={(val) => val.substring(0, 4)}
+                  stroke="#94a3b8"
+                />
+                <YAxis
+                  tick={{ fontSize: 12 }}
+                  stroke="#94a3b8"
+                  unit="%"
+                  domain={[0, 'auto']}
+                  allowDataOverflow={false}
+                />
                 <Tooltip content={<CustomTooltip />} />
                 <Legend />
                 {leveragedProfiles.map((res) => (
@@ -381,22 +502,68 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({ results }) =
             <p className="text-sm text-slate-500">{t('cashAnalysisDesc')}</p>
           </div>
           {cashCharts.map(({ res, data }) => (
-            <div key={res.strategyName} className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col">
+            <div
+              key={res.strategyName}
+              className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col"
+            >
               <div className="flex items-center gap-2 mb-3">
-                <span className="w-3 h-3 rounded-full" style={{ backgroundColor: res.color }}></span>
+                <span
+                  className="w-3 h-3 rounded-full"
+                  style={{ backgroundColor: res.color }}
+                ></span>
                 <h4 className="font-bold text-sm text-slate-700">{res.strategyName}</h4>
               </div>
               <div className="h-[200px] w-full">
                 <ResponsiveContainer width="100%" height="100%">
                   <ComposedChart data={data}>
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                    <XAxis dataKey="date" tick={{ fontSize: 10 }} tickFormatter={(val) => val.substring(0, 4)} stroke="#cbd5e1" minTickGap={50} />
+                    <XAxis
+                      dataKey="date"
+                      tick={{ fontSize: 10 }}
+                      tickFormatter={(val) => val.substring(0, 4)}
+                      stroke="#cbd5e1"
+                      minTickGap={50}
+                    />
                     <YAxis yAxisId="left" tick={{ fontSize: 10 }} stroke="#cbd5e1" unit="%" />
-                    <YAxis yAxisId="right" orientation="right" tick={{ fontSize: 10 }} stroke="#047857" tickFormatter={(val) => `$${val >= 1000 ? (val / 1000).toFixed(0) + 'k' : val}`} />
+                    <YAxis
+                      yAxisId="right"
+                      orientation="right"
+                      tick={{ fontSize: 10 }}
+                      stroke="#047857"
+                      tickFormatter={(val) =>
+                        `$${val >= 1000 ? (val / 1000).toFixed(0) + 'k' : val}`
+                      }
+                    />
                     <Tooltip content={<CustomTooltip />} />
-                    <Area yAxisId="left" type="monotone" dataKey="equityPct" stackId="1" stroke={res.color} fill={res.color} fillOpacity={0.6} name={t('equityPct')} />
-                    <Area yAxisId="left" type="monotone" dataKey="cashPct" stackId="1" stroke="#16a34a" fill="#10b981" fillOpacity={0.5} name={t('cashPct')} />
-                    <Line yAxisId="right" type="monotone" dataKey="cashAmount" stroke="#047857" strokeWidth={2} dot={false} name={t('cashAmount')} />
+                    <Area
+                      yAxisId="left"
+                      type="monotone"
+                      dataKey="equityPct"
+                      stackId="1"
+                      stroke={res.color}
+                      fill={res.color}
+                      fillOpacity={0.6}
+                      name={t('equityPct')}
+                    />
+                    <Area
+                      yAxisId="left"
+                      type="monotone"
+                      dataKey="cashPct"
+                      stackId="1"
+                      stroke="#16a34a"
+                      fill="#10b981"
+                      fillOpacity={0.5}
+                      name={t('cashPct')}
+                    />
+                    <Line
+                      yAxisId="right"
+                      type="monotone"
+                      dataKey="cashAmount"
+                      stroke="#047857"
+                      strokeWidth={2}
+                      dot={false}
+                      name={t('cashAmount')}
+                    />
                   </ComposedChart>
                 </ResponsiveContainer>
               </div>
@@ -421,10 +588,11 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({ results }) =
           <button
             onClick={handleDownloadReport}
             disabled={isGeneratingReport}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold transition-all ${isGeneratingReport
-              ? 'bg-slate-100 text-slate-400 cursor-not-allowed'
-              : 'bg-blue-600 text-white hover:bg-blue-700 shadow-sm hover:shadow-md'
-              }`}
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold transition-all ${
+              isGeneratingReport
+                ? 'bg-slate-100 text-slate-400 cursor-not-allowed'
+                : 'bg-blue-600 text-white hover:bg-blue-700 shadow-sm hover:shadow-md'
+            }`}
           >
             <FileDown className={`w-4 h-4 ${isGeneratingReport ? 'animate-bounce' : ''}`} />
             {isGeneratingReport ? '...' : t('downloadReport')}
@@ -434,49 +602,73 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({ results }) =
           <table className="w-full text-sm text-left">
             <thead className="text-xs text-slate-500 uppercase bg-slate-50">
               <tr>
-                <th className="px-4 py-3 cursor-pointer group select-none" onClick={() => handleSort('strategyName')}>
+                <th
+                  className="px-4 py-3 cursor-pointer group select-none"
+                  onClick={() => handleSort('strategyName')}
+                >
                   <div className="flex items-center">
                     {t('col_strategy')}
                     <SortIcon column="strategyName" />
                   </div>
                 </th>
-                <th className="px-4 py-3 text-right cursor-pointer group select-none" onClick={() => handleSort('finalBalance')}>
+                <th
+                  className="px-4 py-3 text-right cursor-pointer group select-none"
+                  onClick={() => handleSort('finalBalance')}
+                >
                   <div className="flex items-center justify-end">
                     {t('col_balance')}
                     <SortIcon column="finalBalance" />
                   </div>
                 </th>
-                <th className="px-4 py-3 text-right cursor-pointer group select-none" onClick={() => handleSort('cagr')}>
+                <th
+                  className="px-4 py-3 text-right cursor-pointer group select-none"
+                  onClick={() => handleSort('cagr')}
+                >
                   <div className="flex items-center justify-end">
                     {t('col_cagr')}
                     <SortIcon column="cagr" />
                   </div>
                 </th>
-                <th className="px-4 py-3 text-right cursor-pointer group select-none" onClick={() => handleSort('irr')}>
+                <th
+                  className="px-4 py-3 text-right cursor-pointer group select-none"
+                  onClick={() => handleSort('irr')}
+                >
                   <div className="flex items-center justify-end">
                     {t('col_irr')}
                     <SortIcon column="irr" />
                   </div>
                 </th>
-                <th className="px-4 py-3 text-right cursor-pointer group select-none" onClick={() => handleSort('maxDrawdown')}>
+                <th
+                  className="px-4 py-3 text-right cursor-pointer group select-none"
+                  onClick={() => handleSort('maxDrawdown')}
+                >
                   <div className="flex items-center justify-end">
                     {t('col_maxDD')}
                     <SortIcon column="maxDrawdown" />
                   </div>
                 </th>
-                <th className="px-4 py-3 text-right cursor-pointer group select-none" onClick={() => handleSort('sharpeRatio')}>
+                <th
+                  className="px-4 py-3 text-right cursor-pointer group select-none"
+                  onClick={() => handleSort('sharpeRatio')}
+                >
                   <div className="flex items-center justify-end">
                     {t('col_sharpe')}
                     <SortIcon column="sharpeRatio" />
                   </div>
                 </th>
-                <th className="px-4 py-3 text-right cursor-pointer group select-none" onClick={() => handleSort('calmarRatio')}>
+                <th
+                  className="px-4 py-3 text-right cursor-pointer group select-none"
+                  onClick={() => handleSort('calmarRatio')}
+                >
                   <div className="flex items-center justify-end">
                     {t('col_calmar')}
                     <SortIcon column="calmarRatio" />
                   </div>
                 </th>
-                <th className="px-4 py-3 text-right cursor-pointer group select-none" onClick={() => handleSort('painIndex')}>
+                <th
+                  className="px-4 py-3 text-right cursor-pointer group select-none"
+                  onClick={() => handleSort('painIndex')}
+                >
                   <div className="flex items-center justify-end">
                     {t('col_pain')}
                     <SortIcon column="painIndex" />
@@ -486,9 +678,15 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({ results }) =
             </thead>
             <tbody>
               {sortedResults.map((res) => (
-                <tr key={res.strategyName} className={`border-b border-slate-100 last:border-0 hover:bg-slate-50 ${res.isBankrupt ? 'bg-red-50 hover:bg-red-100' : ''}`}>
+                <tr
+                  key={res.strategyName}
+                  className={`border-b border-slate-100 last:border-0 hover:bg-slate-50 ${res.isBankrupt ? 'bg-red-50 hover:bg-red-100' : ''}`}
+                >
                   <td className="px-4 py-3 font-medium text-slate-900 flex items-center gap-2">
-                    <span className="w-2 h-2 rounded-full" style={{ backgroundColor: res.color }}></span>
+                    <span
+                      className="w-2 h-2 rounded-full"
+                      style={{ backgroundColor: res.color }}
+                    ></span>
                     {res.strategyName}
                     {res.isBankrupt && (
                       <span title="Bankrupt">
@@ -496,13 +694,27 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({ results }) =
                       </span>
                     )}
                   </td>
-                  <td className="px-4 py-3 text-right font-mono">${Math.round(res.metrics.finalBalance).toLocaleString()}</td>
-                  <td className="px-4 py-3 text-right text-green-600 font-medium">{res.metrics.cagr.toFixed(2)}%</td>
-                  <td className="px-4 py-3 text-right text-blue-600 font-medium">{res.metrics.irr.toFixed(2)}%</td>
-                  <td className="px-4 py-3 text-right text-red-500">{res.metrics.maxDrawdown.toFixed(2)}%</td>
-                  <td className="px-4 py-3 text-right text-slate-600">{res.metrics.sharpeRatio.toFixed(2)}</td>
-                  <td className="px-4 py-3 text-right text-orange-600 font-medium">{res.metrics.calmarRatio.toFixed(2)}</td>
-                  <td className="px-4 py-3 text-right text-purple-600 font-medium">{res.metrics.painIndex.toFixed(2)}</td>
+                  <td className="px-4 py-3 text-right font-mono">
+                    ${Math.round(res.metrics.finalBalance).toLocaleString()}
+                  </td>
+                  <td className="px-4 py-3 text-right text-green-600 font-medium">
+                    {res.metrics.cagr.toFixed(2)}%
+                  </td>
+                  <td className="px-4 py-3 text-right text-blue-600 font-medium">
+                    {res.metrics.irr.toFixed(2)}%
+                  </td>
+                  <td className="px-4 py-3 text-right text-red-500">
+                    {res.metrics.maxDrawdown.toFixed(2)}%
+                  </td>
+                  <td className="px-4 py-3 text-right text-slate-600">
+                    {res.metrics.sharpeRatio.toFixed(2)}
+                  </td>
+                  <td className="px-4 py-3 text-right text-orange-600 font-medium">
+                    {res.metrics.calmarRatio.toFixed(2)}
+                  </td>
+                  <td className="px-4 py-3 text-right text-purple-600 font-medium">
+                    {res.metrics.painIndex.toFixed(2)}
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -601,7 +813,6 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({ results }) =
           </div>
         </div>
       </div>
-
     </div>
-  );
+  )
 }

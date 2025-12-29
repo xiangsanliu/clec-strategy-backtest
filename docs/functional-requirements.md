@@ -42,14 +42,12 @@ The system supports three interest servicing modes:
 
 1.  **Capitalized (Compound Interest)**:
     Monthly interest is added to the principal balance, resulting in compounding.
-
     - $Debt_{t+1} = Debt_t + I_t$
     - $AccruedInterest_{t+1} = AccruedInterest_t$
     - $Cash_{t+1} = Cash_t$
 
 2.  **Monthly (Cash Payment)**:
     Interest is paid from available cash. If cash is insufficient, the shortfall is capitalized.
-
     - $Paid\_by\_Cash_t = \min(Cash_t, I_t)$
     - $Shortfall_t = I_t - Paid\_by\_Cash_t$
     - $Cash_{t+1} = Cash_t - Paid\_by\_Cash_t$

@@ -9,6 +9,11 @@ RUN npm install
 
 # Copy source code and build
 COPY . .
+
+# Enforce code quality
+RUN npm run lint
+RUN npm run check-format
+
 RUN npm run build
 
 # --- Production Stage ---
