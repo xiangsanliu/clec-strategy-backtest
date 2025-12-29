@@ -274,6 +274,18 @@ export const runBacktest = (
       }
     }
 
+    // New: Check for Negative Cash Bankruptcy
+    // If cash balance is negative (with small epsilon for float errors), backtest fails.
+    if (!isBankrupt && currentState.cashBalance < -0.01) {
+      isBankrupt = true
+      bankruptcyDate = dataRow.date
+      currentState.totalValue = 0
+      monthEvents.push({
+        type: 'INFO',
+        description: `!!! BANKRUPTCY: Negative Cash Balance (${currentState.cashBalance.toFixed(2)}) !!!`,
+      })
+    }
+
     // 4. Update Net Value & Risk Metrics
     if (!isBankrupt) {
       const qqqVal = currentState.shares.QQQ * dataRow.qqq
