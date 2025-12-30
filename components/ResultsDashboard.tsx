@@ -82,27 +82,54 @@ const CustomTooltip = ({
   active,
   payload,
   label,
+  formatType = 'auto',
 }: {
   active?: boolean
-  payload?: unknown[]
+  payload?: { name: string; value: number; color: string }[]
   label?: string
+  formatType?: 'currency' | 'percent' | 'number' | 'auto'
 }) => {
   if (active && payload && payload.length) {
     return (
       <div className="bg-white p-3 border border-slate-200 shadow-lg rounded-lg text-xs">
         <p className="font-bold text-slate-700 mb-2">{label}</p>
-        {(payload as { name: string; value: number; color: string }[]).map((p) => (
-          <div key={p.name} className="flex items-center gap-2 mb-1" style={{ color: p.color }}>
-            <span className="w-2 h-2 rounded-full" style={{ backgroundColor: p.color }}></span>
-            <span>{p.name}:</span>
-            <span className="font-mono font-bold">
-              {typeof p.value === 'number' &&
-              (p.name.includes('%') || p.name.includes('LTV') || p.name.includes('Beta'))
-                ? `${Number(p.value).toFixed(2)}${p.name.includes('Beta') ? '' : '%'}`
-                : `$${Number(p.value).toLocaleString(undefined, { maximumFractionDigits: 0 })}`}
-            </span>
-          </div>
-        ))}
+        {(payload as { name: string; value: number; color: string }[]).map((p) => {
+          let formattedValue = ''
+          const val = Number(p.value)
+
+          if (formatType === 'currency') {
+            formattedValue = `$${val.toLocaleString(undefined, { maximumFractionDigits: 0 })}`
+          } else if (formatType === 'percent') {
+            formattedValue = `${val.toFixed(2)}%`
+          } else if (formatType === 'number') {
+            formattedValue = val.toFixed(2)
+          } else {
+            // auto mode (legacy/fallback)
+            const lowerName = p.name.toLowerCase()
+            if (
+              lowerName.includes('%') ||
+              lowerName.includes('ltv') ||
+              lowerName.includes('drawdown')
+            ) {
+              formattedValue = `${val.toFixed(2)}%`
+            } else if (lowerName.includes('beta') || lowerName.includes('ratio')) {
+              formattedValue = val.toFixed(2)
+            } else if (lowerName.includes('cashamount') || lowerName.includes('balance')) {
+              formattedValue = `$${val.toLocaleString(undefined, { maximumFractionDigits: 0 })}`
+            } else {
+              // Fallback for mixed charts like Cash Allocation
+              formattedValue = val.toLocaleString()
+            }
+          }
+
+          return (
+            <div key={p.name} className="flex items-center gap-2 mb-1" style={{ color: p.color }}>
+              <span className="w-2 h-2 rounded-full" style={{ backgroundColor: p.color }}></span>
+              <span>{p.name}:</span>
+              <span className="font-mono font-bold">{formattedValue}</span>
+            </div>
+          )
+        })}
       </div>
     )
   }
@@ -316,7 +343,7 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({ results }) =
                 stroke="#94a3b8"
                 tickFormatter={(val) => `$${val / 1000}k`}
               />
-              <Tooltip content={<CustomTooltip />} />
+              <Tooltip content={<CustomTooltip formatType="currency" />} />
               <Legend />
               {results.map((res) => (
                 <Line
@@ -369,7 +396,7 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({ results }) =
               <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
               <XAxis dataKey="year" tick={{ fontSize: 12 }} stroke="#94a3b8" />
               <YAxis tick={{ fontSize: 12 }} stroke="#94a3b8" unit="%" />
-              <Tooltip content={<CustomTooltip />} />
+              <Tooltip content={<CustomTooltip formatType="percent" />} />
               <Legend />
               {results.map((res) => (
                 <Bar
@@ -401,7 +428,7 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({ results }) =
                 stroke="#94a3b8"
               />
               <YAxis tick={{ fontSize: 12 }} stroke="#94a3b8" unit="%" />
-              <Tooltip content={<CustomTooltip />} />
+              <Tooltip content={<CustomTooltip formatType="percent" />} />
               <Legend />
               {results.map((res) => (
                 <Line
@@ -438,7 +465,7 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({ results }) =
                 stroke="#94a3b8"
               />
               <YAxis tick={{ fontSize: 12 }} stroke="#94a3b8" domain={[0, 'auto']} />
-              <Tooltip content={<CustomTooltip />} />
+              <Tooltip content={<CustomTooltip formatType="number" />} />
               <Legend />
               {results.map((res) => (
                 <Line
@@ -483,7 +510,7 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({ results }) =
                   domain={[0, 'auto']}
                   allowDataOverflow={false}
                 />
-                <Tooltip content={<CustomTooltip />} />
+                <Tooltip content={<CustomTooltip formatType="percent" />} />
                 <Legend />
                 {leveragedProfiles.map((res) => (
                   <Line
@@ -542,7 +569,7 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({ results }) =
                         `$${val >= 1000 ? (val / 1000).toFixed(0) + 'k' : val}`
                       }
                     />
-                    <Tooltip content={<CustomTooltip />} />
+                    <Tooltip content={<CustomTooltip formatType="auto" />} />
                     <Area
                       yAxisId="left"
                       type="monotone"
