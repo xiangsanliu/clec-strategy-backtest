@@ -18,6 +18,7 @@ import {
   FileText,
   Download,
   Upload,
+  Copy,
 } from 'lucide-react'
 import { useTranslation } from '../services/i18n'
 
@@ -137,6 +138,23 @@ export const ConfigPanel: React.FC<ConfigPanelProps> = ({
     if (editingProfileId === id) setEditingProfileId(null)
   }
 
+  const handleCopyProfile = (e: React.MouseEvent, profile: Profile) => {
+    e.stopPropagation()
+    const newId = Math.random().toString(36).substr(2, 9)
+    const nextColor = PROFILE_COLORS[profiles.length % PROFILE_COLORS.length]
+
+    const newProfile: Profile = {
+      ...profile,
+      id: newId,
+      name: `${t('copyPrefix')}${profile.name}`,
+      color: nextColor,
+      config: JSON.parse(JSON.stringify(profile.config)), // Deep copy
+    }
+
+    onProfilesChange([...profiles, newProfile])
+    setEditingProfileId(newId)
+  }
+
   const updateProfile = (id: string, updates: Partial<Profile> | Partial<AssetConfig>) => {
     onProfilesChange((prevProfiles) =>
       prevProfiles.map((p) => {
@@ -231,17 +249,19 @@ export const ConfigPanel: React.FC<ConfigPanelProps> = ({
 
         <div className="space-y-6">
           {/* Identity */}
-          <div className="space-y-2">
-            <label className="text-xs font-semibold text-slate-500 uppercase">
-              {t('profileName')}
-            </label>
-            <input
-              type="text"
-              value={profile.name}
-              onChange={(e) => updateProfile(profile.id, { name: e.target.value })}
-              className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none font-medium"
-            />
-          </div>
+          <label
+            htmlFor="profile-name-input"
+            className="text-xs font-semibold text-slate-500 uppercase"
+          >
+            {t('profileName')}
+          </label>
+          <input
+            id="profile-name-input"
+            type="text"
+            value={profile.name}
+            onChange={(e) => updateProfile(profile.id, { name: e.target.value })}
+            className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none font-medium"
+          />
 
           <div className="space-y-2">
             <label className="text-xs font-semibold text-slate-500 uppercase">
@@ -815,8 +835,16 @@ export const ConfigPanel: React.FC<ConfigPanelProps> = ({
                   <Edit2 className="w-4 h-4" />
                 </button>
                 <button
+                  onClick={(e) => handleCopyProfile(e, profile)}
+                  className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-all active:scale-95"
+                  title={t('copyProfile')}
+                >
+                  <Copy className="w-4 h-4" />
+                </button>
+                <button
                   onClick={(e) => handleDeleteProfile(e, profile.id)}
-                  className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded transition-all"
+                  className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-all active:scale-95"
+                  title={t('deleteProfile')}
                 >
                   <Trash2 className="w-4 h-4" />
                 </button>
