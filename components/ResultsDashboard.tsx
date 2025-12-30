@@ -111,6 +111,14 @@ const CustomTooltip = ({
 
 export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({ results }) => {
   const { t } = useTranslation()
+
+  // Dynamic height calculation based on profile count to prevent chart compression
+  const calculateChartHeight = (baseHeight: number) => {
+    const threshold = 5
+    const multiplier = 20
+    if (results.length <= threshold) return baseHeight
+    return baseHeight + (results.length - threshold) * multiplier
+  }
   const [showMath, setShowMath] = useState(false)
   const [isGeneratingReport, setIsGeneratingReport] = useState(false)
   const [sortConfig, setSortConfig] = useState<{
@@ -293,7 +301,7 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({ results }) =
         className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm"
       >
         <h3 className="text-lg font-bold text-slate-800 mb-4">{t('portfolioGrowth')}</h3>
-        <div className="h-[400px]">
+        <div style={{ height: `${calculateChartHeight(400)}px` }}>
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={chartData}>
               <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
@@ -328,7 +336,7 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({ results }) =
       {/* Annual Returns Chart */}
       <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
         <h3 className="text-lg font-bold text-slate-800 mb-4">{t('worstYear')}</h3>
-        <div className="h-[300px]">
+        <div style={{ height: `${calculateChartHeight(300)}px` }}>
           <ResponsiveContainer width="100%" height="100%">
             <BarChart
               data={(() => {
@@ -382,7 +390,7 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({ results }) =
         className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm"
       >
         <h3 className="text-lg font-bold text-slate-800 mb-4">{t('historicalDrawdown')}</h3>
-        <div className="h-[300px]">
+        <div style={{ height: `${calculateChartHeight(300)}px` }}>
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={drawdownData}>
               <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
@@ -419,7 +427,7 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({ results }) =
           </span>
         </div>
         <p className="text-sm text-slate-500 mb-4">{t('betaChartDesc')}</p>
-        <div className="h-[300px]">
+        <div style={{ height: `${calculateChartHeight(300)}px` }}>
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={betaData}>
               <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
@@ -458,7 +466,7 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({ results }) =
             </span>
           </div>
           <p className="text-sm text-slate-500 mb-4">{t('ltvChartDesc')}</p>
-          <div className="h-[300px]">
+          <div style={{ height: `${calculateChartHeight(300)}px` }}>
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={ltvData}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
