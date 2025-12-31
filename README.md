@@ -1,5 +1,4 @@
 <div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
 
 # 📈 CLEC Strategy Backtest
 
@@ -10,8 +9,6 @@
 [![TypeScript](https://img.shields.io/badge/typescript-%23007ACC.svg?style=flat&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![TailwindCSS](https://img.shields.io/badge/tailwindcss-%2338B2AC.svg?style=flat&logo=tailwind-css&logoColor=white)](https://tailwindcss.com/)
 [![Docker](https://img.shields.io/badge/docker-%230db7ed.svg?style=flat&logo=docker&logoColor=white)](https://www.docker.com/)
-
-[Explore App in AI Studio](https://ai.studio/apps/drive/1W04ATWSNHiveWwzGJnm1XwiIBt9ivfYp)
 
 </div>
 
@@ -77,9 +74,7 @@
    ```bash
    npm install
    ```
-2. **Configure Environment**:
-   Set `GEMINI_API_KEY` in `.env.local` for AI-enhanced features.
-3. **Launch**:
+2. **Launch**:
    ```bash
    npm run dev
    ```
