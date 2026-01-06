@@ -7,10 +7,11 @@
 ### Docker Commands (Required)
 
 ```bash
-docker-compose up app          # Development server
-docker-compose run test        # Testing (unit + E2E)
-docker-compose run lint        # Linting and format checking
-docker-compose up prod-test    # Production build
+docker compose up app          # Development server
+docker compose run test        # Testing (unit + E2E)
+docker compose run lint        # Linting and format checking
+docker compose up prod-test    # Production build
+docker compose up -f docker-compose.e2e.yml e2e  # E2E tests
 ```
 
 ### Direct npm Commands (Local dev only)
