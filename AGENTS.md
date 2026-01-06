@@ -87,20 +87,39 @@ import { calculateCAGR } from './financeMath'
 
 ### Code Organization
 
-```
-services/              # Core business logic
-  ├── simulationEngine.ts
-  ├── strategies.ts
-  ├── financeMath.ts
-  └── __tests__/      # Unit tests
+**Deviation from Standard**: Project places source files at root instead of `/src/` directory (common in older setups).
 
-components/            # React UI components
-  ├── ConfigPanel.tsx
-  └── ResultsDashboard.tsx
-
-types.ts              # Shared TypeScript interfaces
-constants.ts          # Global configuration
 ```
+./
+├── services/              # Core business logic
+│   ├── simulationEngine.ts
+│   ├── strategies.ts
+│   ├── financeMath.ts
+│   └── __tests__/         # Unit tests (.test.ts)
+├── components/            # React UI components
+│   ├── ConfigPanel.tsx
+│   └── ResultsDashboard.tsx
+├── e2e/                   # End-to-end tests (.spec.ts)
+├── data/                  # Historical market data (JSON)
+├── docs/                  # Documentation and raw scripts
+├── types.ts              # Shared TypeScript interfaces
+├── constants.ts          # Global configuration
+├── index.tsx             # React app entry
+├── App.tsx               # Root component
+└── AGENTS.md             # This file
+```
+
+## WHERE TO LOOK
+
+| Task                        | Location                     | Notes                                                                     |
+| --------------------------- | ---------------------------- | ------------------------------------------------------------------------- |
+| Add new investment strategy | services/strategies.ts       | Implement `StrategyFunction` interface, update `StrategyType` in types.ts |
+| Add UI component            | components/                  | PascalCase naming, functional with hooks                                  |
+| Add unit test               | services/**tests**/          | Use Vitest, `.test.ts` suffix, helper functions like `createBaseConfig()` |
+| Add E2E test                | e2e/                         | Use Playwright, `.spec.ts` suffix                                         |
+| Update internationalization | services/i18n.tsx            | Register strings for all supported languages                              |
+| Modify simulation logic     | services/simulationEngine.ts | Core monthly iteration loop                                               |
+| Add financial metric        | services/financeMath.ts      | Pure functions for CAGR, IRR, etc.                                        |
 
 ### Numeric Precision
 
@@ -149,6 +168,15 @@ import { yourFunction } from '../yourModule'
 4. Add E2E test in `e2e/`
 
 ---
+
+## ANTI-PATTERNS (THIS PROJECT)
+
+- **NEVER** run `npm install`, `npm run build`, `vitest`, etc. directly - **ALWAYS** use Docker containers (`docker compose run ...`)
+- **NO** global installs (`npx`, `pip install -U`, `gem install`) on host
+- **NO** hardcoded UI strings - **ALWAYS** register in `services/i18n.tsx` for i18n support
+- **NO** precision loss in financial calculations - preserve full precision internally
+- **NO** direct state mutation in strategies - use spread operator for immutability
+- **NEVER** host execution for builds/tests - Docker mandatory for consistency
 
 ## Key Constraints
 
