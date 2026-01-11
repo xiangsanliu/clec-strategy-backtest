@@ -90,7 +90,6 @@ export const strategyNoRebalance: StrategyFunction = (state, marketData, config,
     const isContributionMonth = checkIsContributionMonth(config, monthIndex, marketData.date)
 
     if (isContributionMonth) {
-      console.log(marketData.date, monthIndex)
       const contribWeights = getContributionAllocation(config)
 
       const qqqBuy = config.contributionAmount * contribWeights.qqq
