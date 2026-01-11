@@ -31,6 +31,43 @@ const getContributionAllocation = (config: AssetConfig) => {
   }
 }
 
+const checkIsContributionMonth = (
+  config: AssetConfig,
+  monthIndex: number,
+  date: string,
+): boolean => {
+  if (monthIndex === 0) return false
+
+  const currentMonth = parseInt(date.substring(5, 7))
+  let isMonth = false
+
+  if (config.contributionIntervalMonths === 12) {
+    isMonth = currentMonth === (config.yearlyContributionMonth || 12)
+  } else {
+    isMonth = monthIndex % config.contributionIntervalMonths === 0
+  }
+
+  if (!isMonth) return false
+
+  // Check count limit
+  if (config.contributionCount && config.contributionCount > 0) {
+    let countSoFar = 0
+    if (config.contributionIntervalMonths === 12) {
+      const firstMonth = ((currentMonth - 1 - (monthIndex % 12) + 12) % 12) + 1
+      const m0 = ((config.yearlyContributionMonth || 12) - firstMonth + 12) % 12
+      const actualM0 = m0 === 0 ? 12 : m0
+      if (monthIndex >= actualM0) {
+        countSoFar = Math.floor((monthIndex - actualM0) / 12) + 1
+      }
+    } else {
+      countSoFar = Math.floor(monthIndex / config.contributionIntervalMonths)
+    }
+    if (countSoFar > config.contributionCount) return false
+  }
+
+  return true
+}
+
 /**
  * Strategy: No Rebalancing (Buy & Hold + DCA)
  * T=0: Buy based on PORTFOLIO weights (Initial Capital).
@@ -50,18 +87,10 @@ export const strategyNoRebalance: StrategyFunction = (state, marketData, config,
     newState.cashBalance = config.initialCapital * weights.cash
   } else {
     // DCA Logic: Check if this month is a contribution month
-    const currentMonth = parseInt(marketData.date.substring(5, 7)) // 1-12
-
-    let isContributionMonth = false
-    if (config.contributionIntervalMonths === 12) {
-      // Yearly: Check if current calendar month matches yearlyContributionMonth (default December=12)
-      isContributionMonth = currentMonth === (config.yearlyContributionMonth || 12)
-    } else {
-      // Monthly/Quarterly: Use modulo logic
-      isContributionMonth = monthIndex % config.contributionIntervalMonths === 0
-    }
+    const isContributionMonth = checkIsContributionMonth(config, monthIndex, marketData.date)
 
     if (isContributionMonth) {
+      console.log(marketData.date, monthIndex)
       const contribWeights = getContributionAllocation(config)
 
       const qqqBuy = config.contributionAmount * contribWeights.qqq
@@ -139,7 +168,7 @@ export const strategySmart: StrategyFunction = (state, marketData, config, month
   // Track inflow into QLD specifically for the logic "QLD Profit"
   const contribWeights = getContributionAllocation(config)
   // Check if we actually contributed this month
-  const isContributionMonth = !isFirstMonth && monthIndex % config.contributionIntervalMonths === 0
+  const isContributionMonth = checkIsContributionMonth(config, monthIndex, marketData.date)
   const qldContribution = isContributionMonth ? config.contributionAmount * contribWeights.qld : 0
 
   memory.yearInflow = (memory.yearInflow || 0) + qldContribution
@@ -230,7 +259,7 @@ export const strategyFlexible1: StrategyFunction = (state, marketData, config, m
 
   // Track Inflow
   const contribWeights = getContributionAllocation(config)
-  const isContributionMonth = !isFirstMonth && monthIndex % config.contributionIntervalMonths === 0
+  const isContributionMonth = checkIsContributionMonth(config, monthIndex, marketData.date)
   const qldContribution = isContributionMonth ? config.contributionAmount * contribWeights.qld : 0
   memory.yearInflow = (memory.yearInflow || 0) + qldContribution
 
@@ -329,7 +358,7 @@ export const strategyFlexible2: StrategyFunction = (state, marketData, config, m
   }
 
   const contribWeights = getContributionAllocation(config)
-  const isContributionMonth = !isFirstMonth && monthIndex % config.contributionIntervalMonths === 0
+  const isContributionMonth = checkIsContributionMonth(config, monthIndex, marketData.date)
   const qldContribution = isContributionMonth ? config.contributionAmount * contribWeights.qld : 0
   memory.yearInflow = (memory.yearInflow || 0) + qldContribution
 

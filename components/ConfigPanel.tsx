@@ -52,6 +52,7 @@ const DEFAULT_ASSET_CONFIG: AssetConfig = {
   contributionAmount: 500,
   contributionIntervalMonths: 1,
   yearlyContributionMonth: 12, // Default to December
+  contributionCount: 0, // Default to infinite
   qqqWeight: 50,
   qldWeight: 40,
   contributionQqqWeight: 100, // Default to safer contribution
@@ -521,7 +522,7 @@ export const ConfigPanel: React.FC<ConfigPanelProps> = ({
             <div className="flex items-center gap-2 text-sm font-medium text-slate-700">
               <TrendingUp className="w-4 h-4 text-green-600" /> {t('recurringInv')}
             </div>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-3 gap-2">
               <div>
                 <label className="text-[10px] text-slate-500 uppercase font-bold">
                   {t('amount')}
@@ -552,6 +553,20 @@ export const ConfigPanel: React.FC<ConfigPanelProps> = ({
                   <option value={3}>{t('quarterly')}</option>
                   <option value={12}>{t('yearly')}</option>
                 </select>
+              </div>
+              <div>
+                <label className="text-[10px] text-slate-500 uppercase font-bold">
+                  {t('dcaCount')}
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  value={profile.config.contributionCount ?? 0}
+                  onChange={(e) =>
+                    updateProfile(profile.id, { contributionCount: Number(e.target.value) })
+                  }
+                  className="w-full px-2 py-2 border border-slate-300 rounded-lg outline-none"
+                />
               </div>
             </div>
             {/* Month Selector - Only show when frequency is Yearly */}

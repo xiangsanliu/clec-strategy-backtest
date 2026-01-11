@@ -30,6 +30,7 @@ export interface AssetConfig {
   contributionAmount: number // Amount per period
   contributionIntervalMonths: number // 1 = Monthly, 3 = Quarterly, 12 = Yearly
   yearlyContributionMonth: number // 1-12, which month for yearly contributions (default 12 = December)
+  contributionCount?: number // Number of times to contribute (undefined or 0 means infinite)
 
   // Initial / Target Portfolio Allocation
   qqqWeight: number // 0-100

@@ -72,6 +72,49 @@ describe('Strategies', () => {
       expect(newState.shares.QQQ).toBe(15) // 10 + 5
       expect(newState.shares.QLD).toBe(20) // 10 + 10
     })
+
+    it('should respect contributionCount limit', () => {
+      const configWithLimit: AssetConfig = {
+        ...mockConfig,
+        contributionCount: 2,
+      }
+      // Month 0: Initial setup (no DCA)
+      let state = strategyNoRebalance(mockState, mockMarketData, configWithLimit, 0)
+      // Initial shares: QQQ=60, QLD=80
+
+      // Month 1: DCA 1
+      state = strategyNoRebalance(
+        state,
+        { ...mockMarketData, date: '2020-02-01' },
+        configWithLimit,
+        1,
+      )
+      // QQQ: 60 + 5 = 65, QLD: 80 + 10 = 90
+      expect(state.shares.QQQ).toBe(65)
+      expect(state.shares.QLD).toBe(90)
+
+      // Month 2: DCA 2
+      state = strategyNoRebalance(
+        state,
+        { ...mockMarketData, date: '2020-03-01' },
+        configWithLimit,
+        2,
+      )
+      // QQQ: 65 + 5 = 70, QLD: 90 + 10 = 100
+      expect(state.shares.QQQ).toBe(70)
+      expect(state.shares.QLD).toBe(100)
+
+      // Month 3: DCA 3 (Should be blocked by limit)
+      state = strategyNoRebalance(
+        state,
+        { ...mockMarketData, date: '2020-04-01' },
+        configWithLimit,
+        3,
+      )
+      // Shares should remain same as Month 2
+      expect(state.shares.QQQ).toBe(70)
+      expect(state.shares.QLD).toBe(100)
+    })
   })
 
   describe('strategyRebalance', () => {
